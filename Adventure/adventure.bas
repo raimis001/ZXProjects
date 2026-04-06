@@ -466,8 +466,9 @@ LOSE_SCREEN:
     dzx0Standard(@lose_screen_data, 16384)
     PAUSE 60
     ClearEnter() 
-    PrintAt(20, 17, "1. RESTART",ALIGN_LEFT, BLACK, PINK)
-    PrintAt(21, 17, "2. EXIT",ALIGN_LEFT, BLACK, PINK)
+    PrintAt(20, 16, "  YOU LOSE  ",ALIGN_LEFT, BLACK, PINK)
+    PrintAt(21, 16, " 1. RESTART ",ALIGN_LEFT, BLACK, PINK)
+    PrintAt(22, 16, " 2. EXIT    ",ALIGN_LEFT, BLACK, PINK)
     DO
         key = INKEY$
         if key = "2" THEN GOTO END_PROGRAMM
