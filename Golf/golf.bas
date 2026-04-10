@@ -409,20 +409,17 @@ SUB PrintAt(y as uByte, x as uByte, strAt$ as string, paperAt as Byte = -1, inkA
 END SUB
 
 SUB PlayTadaSound()
-    ' Augšupejošs arpeggio (C4 → E4 → G4 → C5)
-    BEEP 0.15, 0   '' C4, 0.15 sekundes
+    BEEP 0.15, 0   '' C4, 0.15 s
     BEEP 0.15, 4   '' E4
     BEEP 0.15, 7   '' G4
     BEEP 0.15, 12  '' C5
-    doPause(3)     '' 0.06 sekundes pauze
-    ' Lejupejošs arpeggio (E5 → G4 → E4 → C4)
-    BEEP 0.2, 16   '' E5, 0.2 sekundes
+    doPause(3)     '' 0.06 s
+    BEEP 0.2, 16   '' E5, 0.2 s
     BEEP 0.2, 7    '' G4
-    doPause(2)     '' 0.04 sekundes pauze
+    doPause(2)     '' 0.04 s
     BEEP 0.2, 4    '' E4
-    BEEP 0.3, 0    '' C4, nedaudz garāks noslēguma tonis
-    doPause(3)     '' 0.06 sekundes pauze
-    ' Noslēguma akcents (atgādina oriģinālo Tada)
+    BEEP 0.3, 0    '' C4, 
+    doPause(3)     '' 0.06 s
     BEEP 0.2, 7    '' G4
 END SUB
 

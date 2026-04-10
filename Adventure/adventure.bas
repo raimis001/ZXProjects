@@ -1,5 +1,6 @@
 #include "../helper.bas"
 #include "../hrprint.bas"
+#include "../sounds.bas"
 #include "zx0.bas"
 
 CONST CHR_DOOR as ubyte = 144
@@ -33,6 +34,9 @@ DIM hasKey as BOOLEAN = FALSE
 DIM gold as ubyte = 0
 DIM energy as byte = 100
 DIM moveCount as ubyte = 0
+
+
+DIM books(2) as ubyte = {1,2,3}
 DIM bookCount as ubyte = 0
 
 SUB Init()
@@ -50,7 +54,8 @@ SUB Init()
     PlaceItems(1, 1) 'Door
     PlaceItems(2, 1) 'Key
 
-    DrawField()
+    ShuffleBooks()
+    'DrawField()
 END SUB
 
 SUB PlaceItems(itemType as ubyte, itemCount as ubyte)
@@ -72,6 +77,22 @@ SUB PlaceItems(itemType as ubyte, itemCount as ubyte)
             'Wait(20)
         END IF
     LOOP UNTIL placed = itemCount
+END SUB
+
+SUB ShuffleBooks()
+    DIM i as ubyte
+    DIM j as ubyte
+    DIM tmp as ubyte
+
+    FOR i = 0 TO 2
+        j = INT(RND * 3)
+        
+        tmp = books(i)
+        books(i) = books(j)
+        books(j) = tmp
+    NEXT i
+
+    bookCount = 0
 END SUB
 
 SUB OpenCell(x as ubyte, y as ubyte)
@@ -182,80 +203,92 @@ FUNCTION CheckKey(dir as string) as BOOLEAN
     RETURN FALSE
 END FUNCTION
 
-SUB ExecuteCell(x as ubyte, y as ubyte)
+FUNCTION ExecuteCell(x as ubyte, y as ubyte) as BOOLEAN
 
-    if field(x,y) = 0 THEN RETURN
+    if field(x,y) = 0 THEN RETURN FALSE
     DIM xx as ubyte
     DIM yy as ubyte
 
-    if field(x,y) = 16 THEN
+    if field(x,y) = 16 THEN 'magic book'
         DrawItem(x,y)
         bookCount = bookCount + 1
         energy = energy + 10
         field(x,y) = 26 'mark as taken
-        DrawHint("You found a magic book! Energy +10.")
 
+        DIM bookType as string = "unknown"
         FOR yy = 0 TO SCREEN_HEIGHT - 1
             FOR xx = 0 TO SCREEN_WIDTH - 1
-                if bookCount = 3 AND field(xx,yy) = 3 THEN field(xx,yy) = 13: DrawItem(xx,yy)
-                if bookCount = 1 AND field(xx,yy) = 4 THEN field(xx,yy) = 14: DrawItem(xx,yy)
-                if bookCount = 2 AND field(xx,yy) = 5 THEN field(xx,yy) = 15: DrawItem(xx,yy)
+                if books(bookCount-1) = 3 AND field(xx,yy) = 3 THEN field(xx,yy) = 13: DrawItem(xx,yy): bookType = "spiderwebs"
+                if books(bookCount-1) = 1 AND field(xx,yy) = 4 THEN field(xx,yy) = 14: DrawItem(xx,yy): bookType = "chest"
+                if books(bookCount-1) = 2 AND field(xx,yy) = 5 THEN field(xx,yy) = 15: DrawItem(xx,yy): bookType = "diamond"
             NEXT xx
         NEXT yy
+        DrawHint("Magic book! Open all " + bookType + "! +10 energy.")
 
+        PlaySound(@SoundChest)
         Wait(50)
+
         DrawItem(x,y)
-        return
+        return TRUE
     END IF
 
-    if field(x,y) = 15 THEN
+    if field(x,y) = 15 THEN 'diamond'
         DrawItem(x,y)
         gold = gold + 20
         energy = energy + 5
         field(x,y) = 25 'mark as taken
         DrawHint("You found a diamond! Gold +20, Energy +5.")
+
+        PlaySound(@SoundChest)
         Wait(50)
+
         DrawItem(x,y)
-        return
+        return TRUE
     END IF
 
-    if field(x,y) = 13 THEN
+    if field(x,y) = 13 THEN 'spiderweb'
         DrawItem(x,y)
         energy = energy - 10
         field(x,y) = 23 'mark as taken
         DrawHint("You got caught in a spiderweb! Energy -10.")
+
+        PlaySound(@SoundSpiderWeb)
         Wait(70)
+
         DrawItem(x,y)
-        return
+        return TRUE
     END IF
 
-    if field(x,y) = 14 THEN
+    if field(x,y) = 14 THEN 'chest'
         DrawItem(x,y)
         gold = gold + 10
         energy = energy - 1
         field(x,y) = 24 'mark as opened
         DrawHint("You opened a chest and found 10 gold!")
+
+        PlaySound(@SoundChest)
         Wait(50)
+
         DrawItem(x,y)
-        return
+        return TRUE
     END IF
 
-    if field(x,y) = 24 THEN
+    if field(x,y) = 24 THEN 'opened chest, nothing inside'
         DrawHint("Chest is empty.")
-        return
+        return FALSE
     END IF
 
-    if field(x,y) = 11 THEN
+    if field(x,y) = 11 THEN 'door'
         if hasKey THEN
             DrawHint("You used the key to open the door!")
             GOTO VICTORY_SCREEN
         else
             DrawHint("The door is locked. Find the key!")
         END IF
-        return
+        return TRUE
     END IF
 
-    if field(x,y) = 12 THEN
+    if field(x,y) = 12 THEN 'key'
         DrawItem(x,y)
         field(x,y) = 22 'mark as taken
         hasKey = TRUE
@@ -267,8 +300,12 @@ SUB ExecuteCell(x as ubyte, y as ubyte)
         next xx
         Wait(50)
         DrawItem(x,y)
+        return TRUE
     END IF
-END SUB
+
+    return FALSE
+END FUNCTION
+
 
 SUB DrawHint(hint as string)
     PrintAt(SCREEN_HEIGHT - 1 , 0, LINE_EMPTY)
@@ -301,6 +338,9 @@ DO
     if key = "2" THEN GOTO END_PROGRAMM
 LOOP UNTIL key = "1"
 ClearEnter()
+
+PlaySound(@SoundStep)
+'PlaySound()
 
 randomize
 
@@ -406,13 +446,15 @@ PROGRAM:
         END IF
 
         if cellX <> oldCellX OR cellY <> oldCellY THEN 
+            
             PrintAt(SCREEN_HEIGHT - 1 , 0, LINE_EMPTY)
             moveCount = moveCount + 1
             if moveCount MOD 5 = 0 THEN energy = energy - 1
     
-            ExecuteCell(cellX, cellY)           
+            if ExecuteCell(cellX, cellY) <> TRUE THEN
+                PlaySound(@SoundStep)
+            END IF
         end if
-
 
         if energy <= 0 then goto LOSE_SCREEN
 

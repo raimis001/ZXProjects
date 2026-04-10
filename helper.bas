@@ -22,8 +22,7 @@ CONST SCREEN_WIDTH  AS UBYTE = 32
 CONST SCREEN_WIDTH42 AS UBYTE = 42
 CONST SCREEN_HEIGHT  AS UBYTE = 24
 
-CONST LINE_EMPTY AS string = "                                          "
-
+CONST LINE_EMPTY AS string = "                                          " '42 spaces
 
 SUB ClearEnter() 
     WHILE INKEY$ <> ""
@@ -36,9 +35,9 @@ END SUB
 '   y        - The row position (0-based).
 '   x        - The column position (0-based).
 '   strAt$   - The string to print.
+'   alignAt  - The alignment of the string (0 = Left, 1 = Center, 2 = Right).
 '   paperAt  - The paper color (default: -1, no change).
 '   inkAt    - The ink color (default: -1, no change).
-'   alignAt  - The alignment of the string (0 = Left, 1 = Center, 2 = Right).
 SUB PrintAt(y as uByte, x as uByte, strAt$ as string, alignAt as Byte = ALIGN_LEFT, paperAt as Byte = -1, inkAt as Byte = -1 )
     '0 = Left, 1 = Center, 2 = Right'
 
