@@ -11,11 +11,8 @@ CONST CHR_CHEST_OPENED as ubyte = 148
 CONST CHR_DIAMOND as ubyte = 149
 CONST CHR_BOOK as ubyte = 150
 
-DIM ch_posY as ubyte = 2*8
-DIM ch_posX as ubyte = 2*8
-DIM ch_speed as ubyte = 1
 
-CONST attr as ubyte = BLACK + WHITE * 8
+CONST attr as ubyte = BLACK + WHITE * 8' + 128
 CONST attrBlank as ubyte = WHITE + WHITE * 8
 'CONST attr as ubyte = WHITE + BLACK * 8
 
@@ -24,6 +21,15 @@ const scrW as ubyte = (SCREEN_WIDTH - 1) * 8
 
 DIM field(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1) as ubyte
 
+DIM ch_posY as ubyte = 2*8
+DIM ch_posX as ubyte = 2*8
+DIM ch_speed as ubyte = 1
+DIM oldX as ubyte
+DIM oldY as ubyte
+DIM cellX as ubyte
+DIM cellY as ubyte
+DIM oldCellX as ubyte 
+DIM oldCellY as ubyte 
 DIM moveX as byte = 0
 DIM moveY as byte = 0
 
@@ -31,10 +37,10 @@ DIM key as string
 
 DIM hasKey as BOOLEAN = FALSE
 
+DIM GOLD as ubyte = 0
 DIM gold as ubyte = 0
 DIM energy as byte = 100
 DIM moveCount as ubyte = 0
-
 
 DIM books(2) as ubyte = {1,2,3}
 DIM bookCount as ubyte = 0
@@ -326,10 +332,11 @@ END SUB
 '================== ==============='
 
 paper BLACK: ink WHITE: border BLACK: cls
+POKE UINTEGER 23675, @Items
 
 dzx0Standard(@title_screen_data, 16384)
 
-PAUSE 60
+PAUSE 50
 ClearEnter() 
 PrintAt(20, 17, "1. START",ALIGN_LEFT, BLACK, PINK)
 PrintAt(21, 17, "2. EXIT",ALIGN_LEFT, BLACK, PINK)
@@ -339,26 +346,16 @@ DO
 LOOP UNTIL key = "1"
 ClearEnter()
 
-PlaySound(@SoundStep)
-'PlaySound()
-
 randomize
 
-POKE UINTEGER 23675, @Items
-
-DIM oldX as ubyte
-DIM oldY as ubyte
-DIM cellX as ubyte
-DIM cellY as ubyte
-DIM oldCellX as ubyte 
-DIM oldCellY as ubyte 
+GOTO INTRO_SCREEN
 
 PROGRAM:
     paper BLACK: ink WHITE: border BLACK: cls
 
     Init()
 
-    energy = 100
+    'energy = 100
     gold = 0
     ch_posX = 16*8
     ch_posY = 12*8
@@ -395,16 +392,13 @@ PROGRAM:
         ' IF NOT MOVING, CHECK FOR INPUT TO START MOVING
         ' =====================================
         IF moveX = 0 AND moveY = 0 THEN
+            'new movement can be started only when character is aligned to grid
 
-            ' atļauj sākt iet tikai tad, ja čars ir uz grida
-            IF (ch_posX MOD 8) = 0 AND (ch_posY MOD 8) = 0 THEN
+            IF CheckKey("w") AND ch_posY > 8 THEN moveX = 0: moveY = -1
+            IF CheckKey("s") AND ch_posY <= scrH - 8 THEN moveX = 0: moveY = 1
+            IF CheckKey("a") AND ch_posX >= 8 THEN moveX = -1: moveY = 0
+            IF CheckKey("d") AND ch_posX <= scrW - 8 THEN moveX = 1: moveY = 0
 
-                IF CheckKey("w") AND ch_posY > 8 THEN moveX = 0: moveY = -1
-                IF CheckKey("s") AND ch_posY <= scrH - 8 THEN moveX = 0: moveY = 1
-                IF CheckKey("a") AND ch_posX >= 8 THEN moveX = -1: moveY = 0
-                IF CheckKey("d") AND ch_posX <= scrW - 8 THEN moveX = 1: moveY = 0
-
-            END IF
         END IF
 
         ' =====================================
@@ -417,13 +411,13 @@ PROGRAM:
             ch_posX = ch_posX + moveX * ch_speed
             ch_posY = ch_posY + moveY * ch_speed
 
-            ' kad sasniegts nākamais grid punkts, apstājās
+            'Check grid alignment
             IF (ch_posX MOD 8) = 0 AND (ch_posY MOD 8) = 0 THEN moveX = 0: moveY = 0
         END IF
 
         Wait(2)        
 
-        if oldX = ch_posX AND oldY = ch_posY THEN CONTINUE DO
+        if oldX = ch_posX AND oldY = ch_posY THEN CONTINUE DO        
 
 
         HRPrint(oldX, oldY, 32, attrBlank ,  0)
@@ -487,6 +481,11 @@ ASM
     INCBIN "zxVictory.scr.zx0"
 END ASM
 
+inside_screen_data:
+ASM
+    INCBIN "zxInside.scr.zx0"
+END ASM
+
 Character:
     ASM
         DB 0,24,60,24,60,90,36,36   ;Character
@@ -519,18 +518,64 @@ LOSE_SCREEN:
     GOTO PROGRAM
 
 VICTORY_SCREEN:
+    GOLD = GOLD + gold
     Wait(70)
     dzx0Standard(@victory_screen_data, 16384)
     PAUSE 60
     ClearEnter()
-    PrintAt(20, 17, "1. RESTART",ALIGN_LEFT, BLACK, PINK)
-    PrintAt(21, 17, "2. EXIT",ALIGN_LEFT, BLACK,PINK)
+    PrintAt(21, 17, "1. HOME",ALIGN_LEFT, BLACK, PINK)
+    PrintAt(22, 17, "2. EXIT",ALIGN_LEFT, BLACK,PINK)
+    DO
+        key = INKEY$
+        if key = "2" THEN GOTO END_PROGRAMM
+    LOOP UNTIL key = "1"
+    ClearEnter()
+    GOTO HOME_SCREEN
+
+HOME_SCREEN:
+    dzx0Standard(@inside_screen_data, 16384)
+    ClearEnter()
+    PrintAt(0,0,"Your gold: " + str(GOLD), ALIGN_LEFT, BLACK, YELLOW)
+    PrintAt(7, 33,"3. SHOP",ALIGN_LEFT, BLACK, WHITE)
+    PrintAt(19, 3, " 1. REST",ALIGN_LEFT, BLACK, WHITE)
+    PrintAt(4, 18, "2. ADVENTURE",ALIGN_LEFT, BLACK,WHITE)
     DO
         key = INKEY$
         if key = "2" THEN GOTO END_PROGRAMM
     LOOP UNTIL key = "1"
     ClearEnter()
     GOTO PROGRAM
+
+INTRO_SCREEN:
+    paper BLACK: ink WHITE: border BLACK: cls
+
+    DIM tt(5) as string
+    tt(0) = "even a tiny drop of dew on"
+    tt(1) = "a flower cannot be preserved"
+    tt(2) = "(O. Vacietis)"
+    tt(3) = "And still, there is a story"
+    tt(4) = "of a stone no one can reach"
+    tt(5) = "Perhaps it was never meant to be found"
+
+    CONST ttAttr as ubyte = WHITE + BLACK * 8' + 128
+
+    TypeWrite(5, 5, tt(0), 3, ttAttr)
+    TypeWrite(6, 5, tt(1), 3, ttAttr)
+    TypeWrite(7, 5, tt(2), 3, ttAttr)
+    Wait(50)
+    TypeWrite(9, 5, tt(3), 3, ttAttr)
+    TypeWrite(10, 5, tt(4), 3, ttAttr)
+    TypeWrite(11, 5, tt(5), 3, ttAttr)
+
+    ClearEnter() 
+    PrintAt(20, 17, "1. CONTINUE",ALIGN_LEFT, BLACK, PINK)
+    'PrintAt(21, 17, "2. EXIT",ALIGN_LEFT, BLACK, PINK)
+    DO
+        key = INKEY$
+        if key = "2" THEN GOTO END_PROGRAMM
+    LOOP UNTIL key = "1"
+    ClearEnter() 
+    GOTO HOME_SCREEN
 
 END_PROGRAMM:       
     paper WHITE: ink BLACK: border WHITE: cls

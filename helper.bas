@@ -65,6 +65,16 @@ SUB PrintAt(y as uByte, x as uByte, strAt$ as string, alignAt as Byte = ALIGN_LE
 
 END SUB
 
+SUB TypeWrite(y as uByte, x as uByte, strAt$ as string, delay as uByte, attrAt as Byte = -1)
+    if attrAt > -1 THEN POKE 23693, attrAt
+
+    FOR i = 0 TO LEN(strAt$)
+        PrintAt(y, x + i - 1, strAt$(i TO i), ALIGN_LEFT, -1, -1)
+        Wait(delay)
+    NEXT i
+END SUB
+
+
 'SUB LoadScreen(addr as uinteger)
 ''    ASM
 ''        ld d, (IX+5)
