@@ -12,6 +12,8 @@ CONST CHR_DIAMOND as ubyte = 149
 CONST CHR_BOOK as ubyte = 150
 
 
+
+CONST ttAttr as ubyte = WHITE + BLACK * 8' + 128
 CONST attr as ubyte = BLACK + WHITE * 8' + 128
 CONST attrBlank as ubyte = WHITE + WHITE * 8
 'CONST attr as ubyte = WHITE + BLACK * 8
@@ -508,14 +510,14 @@ LOSE_SCREEN:
     PAUSE 60
     ClearEnter() 
     PrintAt(20, 16, "  YOU LOSE  ",ALIGN_LEFT, BLACK, PINK)
-    PrintAt(21, 16, " 1. RESTART ",ALIGN_LEFT, BLACK, PINK)
+    PrintAt(21, 16, " 1. HOME ",ALIGN_LEFT, BLACK, PINK)
     PrintAt(22, 16, " 2. EXIT    ",ALIGN_LEFT, BLACK, PINK)
     DO
         key = INKEY$
         if key = "2" THEN GOTO END_PROGRAMM
     LOOP UNTIL key = "1"
     ClearEnter() 
-    GOTO PROGRAM
+    GOTO HOME_SCREEN
 
 VICTORY_SCREEN:
     GOLD = GOLD + gold
@@ -536,15 +538,48 @@ HOME_SCREEN:
     dzx0Standard(@inside_screen_data, 16384)
     ClearEnter()
     PrintAt(0,0,"Your gold: " + str(GOLD), ALIGN_LEFT, BLACK, YELLOW)
-    PrintAt(7, 33,"3. SHOP",ALIGN_LEFT, BLACK, WHITE)
+    DIM e as string = str(energy)
+    while LEN(e) < 3
+        e = " " + e
+    END WHILE
+    PrintAt(0, SCREEN_WIDTH42 - 1, "  Energy: " + e + " ", ALIGN_RIGHT)
+
     PrintAt(19, 3, " 1. REST",ALIGN_LEFT, BLACK, WHITE)
     PrintAt(4, 18, "2. ADVENTURE",ALIGN_LEFT, BLACK,WHITE)
+    PrintAt(7, 33,"3. SHOP",ALIGN_LEFT, BLACK, WHITE)
+    DO
+        key = INKEY$
+        if key = "1" THEN GOTO REST_SCREEN
+        if key = "2" THEN GOTO PROGRAM
+        'if key = "3" THEN GOTO SHOP_SCREEN
+    LOOP UNTIL key = "1"
+    ClearEnter()
+    GOTO PROGRAM
+
+REST_SCREEN:
+    energy = 100
+    paper BLACK: ink WHITE: border BLACK: cls
+    DIM tt1(4) as string
+    tt1(0) = "You rest and recover your energy."
+    tt1(1) = "Many have walked these paths—"
+    tt1(2) = "and turned back."
+    tt1(3) = "Not because they failed…"
+    tt1(4) = "but because they understood."
+    for i = 0 to 4
+        TypeWrite(5 + i, 5, tt1(i), 2, ttAttr)
+        Wait(4)
+    next i
+    ClearEnter() 
+    PrintAt(20, 17, "1. CONTINUE",ALIGN_LEFT, BLACK, PINK)
     DO
         key = INKEY$
         if key = "2" THEN GOTO END_PROGRAMM
     LOOP UNTIL key = "1"
-    ClearEnter()
-    GOTO PROGRAM
+    ClearEnter() 
+    GOTO HOME_SCREEN
+
+SHOP_SCREEN:
+
 
 INTRO_SCREEN:
     paper BLACK: ink WHITE: border BLACK: cls
@@ -555,9 +590,7 @@ INTRO_SCREEN:
     tt(2) = "(O. Vacietis)"
     tt(3) = "And still, there is a story"
     tt(4) = "of a stone no one can reach"
-    tt(5) = "Perhaps it was never meant to be found"
-
-    CONST ttAttr as ubyte = WHITE + BLACK * 8' + 128
+    tt(5) = "Perhaps it was never meant to be found"   
 
     TypeWrite(5, 5, tt(0), 3, ttAttr)
     TypeWrite(6, 5, tt(1), 3, ttAttr)
@@ -569,7 +602,6 @@ INTRO_SCREEN:
 
     ClearEnter() 
     PrintAt(20, 17, "1. CONTINUE",ALIGN_LEFT, BLACK, PINK)
-    'PrintAt(21, 17, "2. EXIT",ALIGN_LEFT, BLACK, PINK)
     DO
         key = INKEY$
         if key = "2" THEN GOTO END_PROGRAMM
