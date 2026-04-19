@@ -22,12 +22,18 @@ CONST SCREEN_WIDTH  AS UBYTE = 32
 CONST SCREEN_WIDTH42 AS UBYTE = 42
 CONST SCREEN_HEIGHT  AS UBYTE = 24
 
-CONST LINE_EMPTY AS string = "                                          " '42 spaces
+CONST LINE_EMPTY42 AS string = "                                          " '42 spaces
+CONST LINE_EMPTY AS string = "                               " '32 spaces
 
 SUB ClearEnter() 
     WHILE INKEY$ <> ""
         PAUSE 1
     END WHILE
+END SUB
+
+SUB ClearLine(y as uByte, attrAt as Byte = -1)
+    if attrAt > -1 THEN POKE 23693, attrAt
+    print at y, 0; LINE_EMPTY
 END SUB
 
 SUB PrintAttr(y as uByte, x as uByte, strAt$ as string, alignAt as Byte = ALIGN_LEFT, attrAt as Byte = -1)
@@ -123,4 +129,28 @@ SUB Wait(frameCount as uByte)
         HALT
         END ASM
     NEXT n
+END SUB
+
+SUB ClearAttrLine(y as uByte, attr as uByte)
+    ASM
+        ld a, (ix+5)      ; y
+        ld l, a
+        ld h, 0
+        add hl, hl        ; *2
+        add hl, hl        ; *4
+        add hl, hl        ; *8
+        add hl, hl        ; *16
+        add hl, hl        ; *32
+
+        ld de, 22528
+        add hl, de        ; HL = addr
+
+        ld b, 32
+        ld a, (ix+7)      ; attr
+
+loop:
+        ld (hl), a
+        inc hl
+        djnz loop
+    END ASM
 END SUB

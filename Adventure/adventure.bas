@@ -38,9 +38,10 @@ CONST DIR_RIGHT as ubyte = 3
 
 CONST ttAttr as ubyte = CYAN + BLACK * 8' + 128
 CONST attr as ubyte = BLACK + WHITE * 8' + 128
-CONST attrBlank as ubyte = WHITE + WHITE * 8
+CONST attBlank as ubyte = WHITE + WHITE * 8
 CONST attMenu as ubyte = PINK + BLACK * 8
 CONST attDef as ubyte = WHITE + BLACK * 8
+CONST attBlack as ubyte = BLACK + BLACK * 8
 
 const scrH as ubyte = (SCREEN_HEIGHT - 2) * 8
 const scrW as ubyte = (SCREEN_WIDTH - 1) * 8
@@ -232,6 +233,22 @@ SUB DrawItem(x as byte, y as byte)
     if DrawBook(x,y) THEN RETURN
 END SUB
 
+SUB UseBook(bookType as ubyte)
+    DIM xx as ubyte
+    DIM yy as ubyte
+    
+    DIM book as string = "unknown"
+
+    FOR yy = 0 TO SCREEN_HEIGHT - 1
+        FOR xx = 0 TO SCREEN_WIDTH - 1
+            if bookType = 1 AND field(xx,yy) = 4 THEN field(xx,yy) = 14: DrawItem(xx,yy): book = "chest"
+            if bookType = 2 AND field(xx,yy) = 5 THEN field(xx,yy) = 15: DrawItem(xx,yy): book = "diamond"
+            if bookType = 3 AND field(xx,yy) = 3 THEN field(xx,yy) = 13: DrawItem(xx,yy): book = "spiderwebs"
+        NEXT xx
+    NEXT yy
+    DrawHint("Magic book! Open all " + book + "! +10 energy.")
+
+END SUB
 
 FUNCTION ExecuteCell(x as ubyte, y as ubyte) as BOOLEAN
 
@@ -245,15 +262,17 @@ FUNCTION ExecuteCell(x as ubyte, y as ubyte) as BOOLEAN
         energy = energy + 10
         field(x,y) = 26 'mark as taken
 
-        DIM bookType as string = "unknown"
-        FOR yy = 0 TO SCREEN_HEIGHT - 1
-            FOR xx = 0 TO SCREEN_WIDTH - 1
-                if books(bookCount-1) = 3 AND field(xx,yy) = 3 THEN field(xx,yy) = 13: DrawItem(xx,yy): bookType = "spiderwebs"
-                if books(bookCount-1) = 1 AND field(xx,yy) = 4 THEN field(xx,yy) = 14: DrawItem(xx,yy): bookType = "chest"
-                if books(bookCount-1) = 2 AND field(xx,yy) = 5 THEN field(xx,yy) = 15: DrawItem(xx,yy): bookType = "diamond"
-            NEXT xx
-        NEXT yy
-        DrawHint("Magic book! Open all " + bookType + "! +10 energy.")
+        UseBook(books(bookCount-1))
+
+        'DIM bookType as string = "unknown"
+        'FOR yy = 0 TO SCREEN_HEIGHT - 1
+        ''    FOR xx = 0 TO SCREEN_WIDTH - 1
+        ''        if books(bookCount-1) = 3 AND field(xx,yy) = 3 THEN field(xx,yy) = 13: DrawItem(xx,yy): bookType = "spiderwebs"
+        ''        if books(bookCount-1) = 1 AND field(xx,yy) = 4 THEN field(xx,yy) = 14: DrawItem(xx,yy): bookType = "chest"
+        ''        if books(bookCount-1) = 2 AND field(xx,yy) = 5 THEN field(xx,yy) = 15: DrawItem(xx,yy): bookType = "diamond"
+        ''    NEXT xx
+        'NEXT yy
+        'DrawHint("Magic book! Open all " + bookType + "! +10 energy.")
 
         PlaySound(@SoundChest)
         Wait(50)
@@ -356,7 +375,10 @@ SUB TypeWriteAt()
 END SUB
 
 SUB DrawHint(hint as string)
-    PrintAt(SCREEN_HEIGHT - 1 , 0, LINE_EMPTY)
+    'PrintAt(SCREEN_HEIGHT - 1 , 0, LINE_EMPTY42)
+    'print at SCREEN_HEIGHT - 1,0; paper BLACK; ink WHITE; LINE_EMPTY
+    'ClearLine(SCREEN_HEIGHT - 1)
+    ClearAttrLine(SCREEN_HEIGHT - 1,attBlack)
     PrintAt(SCREEN_HEIGHT - 1 , 0, hint,0,-1, YELLOW)
 END SUB
 
@@ -367,8 +389,20 @@ SUB DrawUI()
         e = " " + e
     END WHILE
     PrintAt(0, SCREEN_WIDTH42 - 1, "  Energy: " + e + " ", ALIGN_RIGHT, BLACK, CYAN)
+    
     DIM itemStr as string = "(empty)"
-    if hasKey THEN itemStr = "Key"
+    if inventory = 1 THEN itemStr = "BoC (1. use)"
+    if inventory = 2 THEN itemStr = "BoD (1. use)"
+    if inventory = 3 THEN itemStr = "BoS (1. use)"
+    if hasKey THEN itemStr = "  KEY"
+
+    'while LEN(itemStr) < 20
+    ''    itemStr = itemStr + " "
+    'END WHILE
+
+
+    'ClearLine(1)
+    ClearAttrLine(1,attBlack)
     PrintAt(1, 0, "Inventory: " + itemStr, ALIGN_LEFT, BLACK, WHITE)
 END SUB
 
@@ -437,6 +471,14 @@ PROGRAM:
     DO
 
         keyb = CODE INKEY$
+        if keyb = KEY1 and inventory > 0 THEN
+            UseBook(inventory)
+            inventory = 0
+            DrawUI()
+            Wait(70)
+            CONTINUE DO
+        END IF
+
         joy = in 31
         if keyb = KEY0 THEN GOTO END_PROGRAMM
 
@@ -482,7 +524,9 @@ PROGRAM:
                 OpenCell(cellX - 1, cellY)
             END IF
 
-            PrintAt(SCREEN_HEIGHT - 1 , 0, LINE_EMPTY)
+            'ClearLine(SCREEN_HEIGHT - 1)
+            ClearAttrLine(SCREEN_HEIGHT - 1,attBlack)
+            'PrintAt(SCREEN_HEIGHT - 1 , 0, LINE_EMPTY42)
 
             if ExecuteCell(cellX, cellY) <> TRUE THEN
                 PlaySound(@SoundStep)
@@ -498,7 +542,7 @@ PROGRAM:
             moveX = 0: moveY = 0
         END IF
 
-        HRPrint(oldX, oldY, 32, attrBlank ,  0)
+        HRPrint(oldX, oldY, 32, attBlank ,  0)
         HRPrint(ch_posX, ch_posY, @Character, attr ,  0)
 
         DrawArea((ch_posX + 4) / 8, (ch_posY + 4) / 8)
@@ -577,25 +621,24 @@ SUB SellItem()
         RETURN
     END IF
 
-    if inventory = 1 THEN 'Book of spiders
-        GOLD = GOLD + 50
-        inventory = 0
-        DrawHint("You sold the Book of Spiders!")
-    END IF
-
-    if inventory = 2 THEN 'Book of chests
+    if inventory = 1 THEN 'Book of chests
         GOLD = GOLD + 20
         inventory = 0
         DrawHint("You sold the Book of Chests!")
     END IF
 
-    if inventory = 3 THEN 'Book of diamonds
+    if inventory = 2 THEN 'Book of diamonds
         GOLD = GOLD + 20
         inventory = 0
         DrawHint("You sold the Book of Diamonds!")
     END IF
 
-    'DrawUI()
+    if inventory = 3 THEN 'Book of spiders
+        GOLD = GOLD + 50
+        inventory = 0
+        DrawHint("You sold the Book of Spiders!")
+    END IF
+
 END SUB
 
 SUB BuyItem(item as ubyte)
@@ -604,25 +647,24 @@ SUB BuyItem(item as ubyte)
         RETURN
     END IF
 
-    if item = KEY2 AND GOLD >= 50 AND inventory = 0 THEN 'Book of spiders
-        GOLD = GOLD - 50
-        inventory = 1
-        DrawHint("You bought the Book of Spiders!")
-    END IF
-
-    if item = KEY3 AND GOLD >= 20 AND inventory = 0 THEN 'Book of chests
+    if item = KEY2 AND GOLD >= 20 AND inventory = 0 THEN 'Book of chests
         GOLD = GOLD - 20
-        inventory = 2
+        inventory = 1
         DrawHint("You bought the Book of Chests!")
     END IF
 
-    if item = KEY4 AND GOLD >= 20 AND inventory = 0 THEN 'Book of diamonds
+    if item = KEY3 AND GOLD >= 20 AND inventory = 0 THEN 'Book of diamonds
         GOLD = GOLD - 20
-        inventory = 3
+        inventory = 2
         DrawHint("You bought the Book of Diamonds!")
     END IF
 
-    'DrawUI()
+    if item = KEY4 AND GOLD >= 50 AND inventory = 0 THEN 'Book of spiders
+        GOLD = GOLD - 50
+        inventory = 3
+        DrawHint("You bought the Book of Spiders!")
+    END IF
+
 END SUB
 
 SHOP_SCREEN:
@@ -631,20 +673,22 @@ SHOP_SCREEN:
     PrintAttr(2, 5, "Welcome to the shop!",ALIGN_LEFT, attDef)
     PrintAt(3, 5, "Your gold: " + str(GOLD),ALIGN_LEFT, BLACK, YELLOW)
 
-    PrintAttr(5, 5, "2. Book of spiders (BoS)",ALIGN_LEFT, ttAttr)
-    PrintAttr(5, 32, "50g",ALIGN_LEFT, ttAttr)
+    PrintAttr(5, 5, "2. Book of chests (BoC)",ALIGN_LEFT, ttAttr)
+    PrintAttr(5, 32, "20g",ALIGN_LEFT, ttAttr)
 
-    PrintAttr(6, 5, "3. Book of chests (BoC)",ALIGN_LEFT, ttAttr)
+    PrintAttr(6, 5, "3. Book of diamonds (BoD)",ALIGN_LEFT, ttAttr)
     PrintAttr(6, 32, "20g",ALIGN_LEFT, ttAttr)
 
-    PrintAttr(7, 5, "4. Book of diamonds (BoD)",ALIGN_LEFT, ttAttr)
-    PrintAttr(7, 32, "20g",ALIGN_LEFT, ttAttr)
+    PrintAttr(7, 5, "4. Book of spiders (BoS)",ALIGN_LEFT, ttAttr)
+    PrintAttr(7, 32, "50g",ALIGN_LEFT, ttAttr)
 
     PrintAttr(10, 5, "Inventory:",ALIGN_LEFT, ttAttr)
     if inventory = 0 THEN PrintAttr(10, 17, "(empty)",ALIGN_LEFT,ttAttr)
-    if inventory = 1 THEN PrintAttr(10, 17, "BoS    ",ALIGN_LEFT,ttAttr)
-    if inventory = 2 THEN PrintAttr(10, 17, "BoC    ",ALIGN_LEFT,ttAttr)
-    if inventory = 3 THEN PrintAttr(10, 17, "BoD    ",ALIGN_LEFT,ttAttr)
+
+    if inventory = 1 THEN PrintAttr(10, 17, "BoC    ",ALIGN_LEFT,ttAttr)
+    if inventory = 2 THEN PrintAttr(10, 17, "BoD    ",ALIGN_LEFT,ttAttr)
+    if inventory = 3 THEN PrintAttr(10, 17, "BoS    ",ALIGN_LEFT,ttAttr)
+
     if inventory <> 0 THEN PrintAttr(12, 5, "9. sell",ALIGN_LEFT, ttAttr) else PrintAttr(12, 5, "           ",ALIGN_LEFT)
 
     PrintAttr(20, 17, "1. CONTINUE",ALIGN_LEFT, attMenu)
