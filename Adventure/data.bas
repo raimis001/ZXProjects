@@ -27,5 +27,5 @@ rest_text:
      DATA "You rest and recover your energy."
      DATA "Many have walked these paths"
      DATA "and turned back."
-     DATA "Not because they failed…"
+     DATA "Not because they failed"
      DATA "but because they understood."

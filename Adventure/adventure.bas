@@ -16,6 +16,12 @@ CONST KEY0 as ubyte = 48
 CONST KEY1 as ubyte = 49
 CONST KEY2 as ubyte = 50
 CONST KEY3 as ubyte = 51
+CONST KEY4 as ubyte = 52
+CONST KEY5 as ubyte = 53
+CONST KEY6 as ubyte = 54
+CONST KEY7 as ubyte = 55
+CONST KEY8 as ubyte = 56
+CONST KEY9 as ubyte = 57
 
 CONST KEYW as ubyte = 119
 CONST KEYS as ubyte = 115 bOR 83
@@ -33,7 +39,8 @@ CONST DIR_RIGHT as ubyte = 3
 CONST ttAttr as ubyte = CYAN + BLACK * 8' + 128
 CONST attr as ubyte = BLACK + WHITE * 8' + 128
 CONST attrBlank as ubyte = WHITE + WHITE * 8
-'CONST attr as ubyte = WHITE + BLACK * 8
+CONST attMenu as ubyte = PINK + BLACK * 8
+CONST attDef as ubyte = WHITE + BLACK * 8
 
 const scrH as ubyte = (SCREEN_HEIGHT - 2) * 8
 const scrW as ubyte = (SCREEN_WIDTH - 1) * 8
@@ -56,13 +63,17 @@ DIM joy as ubyte = 0
 
 DIM hasKey as BOOLEAN = FALSE
 
-DIM GOLD as ubyte = 0
+DIM GOLD as uinteger = 500
 DIM gold as ubyte = 0
 DIM energy as byte = 100
+
+
 DIM moveCount as ubyte = 0
 
 DIM books(2) as ubyte = {1,2,3}
 DIM bookCount as ubyte = 0
+
+DIM inventory as ubyte = 0
 
 SUB Init()
     DIM x as ubyte
@@ -380,8 +391,8 @@ POKE UINTEGER 23675, @Items
 dzx0Standard(@title_screen_data, 16384)
 
 PAUSE 50
-PrintAt(20, 17, "1. START",ALIGN_LEFT, BLACK, PINK)
-PrintAt(21, 17, "0. EXIT",ALIGN_LEFT, BLACK, PINK)
+PrintAttr(20, 17, "1. START",ALIGN_LEFT, attMenu)
+PrintAttr(21, 17, "0. EXIT",ALIGN_LEFT, attMenu)
 ClearEnter() 
 DO
     keyb = CODE INKEY$
@@ -494,17 +505,15 @@ PROGRAM:
 
     LOOP UNTIL FALSE
 
-
-
 LOSE_SCREEN:
     Wait(70)
     dzx0Standard(@lose_screen_data, 16384)
     PAUSE 60
 
-    PrintAt(20, 16, "  YOU LOSE  ",ALIGN_LEFT, BLACK, PINK)
-    PrintAt(21, 16, " 1. HOME ",ALIGN_LEFT, BLACK, PINK)
-    PrintAt(22, 16, " 0. EXIT    ",ALIGN_LEFT, BLACK, PINK)
-    
+    PrintAttr(20, 16, "  YOU LOSE  ",ALIGN_LEFT, attMenu)
+    PrintAttr(21, 16, " 1. HOME ",ALIGN_LEFT, attMenu)
+    PrintAttr(22, 16, " 0. EXIT    ",ALIGN_LEFT, attMenu)
+
     ClearEnter()
     DO
         keyb = CODE INKEY$
@@ -517,8 +526,8 @@ VICTORY_SCREEN:
     Wait(70)
     dzx0Standard(@victory_screen_data, 16384)
     PAUSE 60
-    PrintAt(21, 17, "1. HOME",ALIGN_LEFT, BLACK, PINK)
-    PrintAt(22, 17, "0. EXIT",ALIGN_LEFT, BLACK,PINK)
+    PrintAttr(21, 17, "1. HOME",ALIGN_LEFT, attMenu)
+    PrintAttr(22, 17, "0. EXIT",ALIGN_LEFT, attMenu)
 
     ClearEnter()
     DO
@@ -532,9 +541,9 @@ HOME_SCREEN:
     dzx0Standard(@inside_screen_data, 16384)
     DrawUI()
 
-    PrintAt(4, 18, "1. ADVENTURE",ALIGN_LEFT, BLACK,WHITE)
-    PrintAt(19, 3, " 2. REST",ALIGN_LEFT, BLACK, WHITE)
-    PrintAt(7, 33,"3. SHOP",ALIGN_LEFT, BLACK, WHITE)
+    PrintAttr(4, 18, "1. ADVENTURE",ALIGN_LEFT, attDef)
+    PrintAttr(19, 3, " 2. REST",ALIGN_LEFT, attDef)
+    PrintAttr(7, 33,"3. SHOP",ALIGN_LEFT, attDef)
 
     ClearEnter()
     DO
@@ -553,25 +562,99 @@ REST_SCREEN:
     restore rest_text
     TypeWriteAt()
 
-    PrintAt(20, 17, "1. CONTINUE",ALIGN_LEFT, BLACK, PINK)
+    PrintAttr(20, 17, "1. CONTINUE",ALIGN_LEFT, attMenu)
 
     ClearEnter() 
     DO
         keyb = CODE INKEY$
-        if (keyb = 49) THEN GOTO HOME_SCREEN
-        if (keyb = 48) THEN GOTO END_PROGRAMM
+        if (keyb = KEY1) THEN GOTO HOME_SCREEN
+        if (keyb = KEY0) THEN GOTO END_PROGRAMM
     LOOP UNTIL FALSE
+
+SUB SellItem()
+    if inventory = 0 THEN 
+        DrawHint("You have nothing to sell.")
+        RETURN
+    END IF
+
+    if inventory = 1 THEN 'Book of spiders
+        GOLD = GOLD + 50
+        inventory = 0
+        DrawHint("You sold the Book of Spiders!")
+    END IF
+
+    if inventory = 2 THEN 'Book of chests
+        GOLD = GOLD + 20
+        inventory = 0
+        DrawHint("You sold the Book of Chests!")
+    END IF
+
+    if inventory = 3 THEN 'Book of diamonds
+        GOLD = GOLD + 20
+        inventory = 0
+        DrawHint("You sold the Book of Diamonds!")
+    END IF
+
+    'DrawUI()
+END SUB
+
+SUB BuyItem(item as ubyte)
+    if inventory <> 0 THEN 
+        DrawHint("You can only carry one item.")
+        RETURN
+    END IF
+
+    if item = KEY2 AND GOLD >= 50 AND inventory = 0 THEN 'Book of spiders
+        GOLD = GOLD - 50
+        inventory = 1
+        DrawHint("You bought the Book of Spiders!")
+    END IF
+
+    if item = KEY3 AND GOLD >= 20 AND inventory = 0 THEN 'Book of chests
+        GOLD = GOLD - 20
+        inventory = 2
+        DrawHint("You bought the Book of Chests!")
+    END IF
+
+    if item = KEY4 AND GOLD >= 20 AND inventory = 0 THEN 'Book of diamonds
+        GOLD = GOLD - 20
+        inventory = 3
+        DrawHint("You bought the Book of Diamonds!")
+    END IF
+
+    'DrawUI()
+END SUB
 
 SHOP_SCREEN:
     paper BLACK: ink WHITE: border BLACK: cls
-    PrintAt(2, 5, "Welcome to the shop!", ALIGN_LEFT, BLACK, WHITE)
+    SHOP_REDRAW:
+    PrintAttr(2, 5, "Welcome to the shop!",ALIGN_LEFT, attDef)
+    PrintAt(3, 5, "Your gold: " + str(GOLD),ALIGN_LEFT, BLACK, YELLOW)
 
-    PrintAt(20, 17, "1. CONTINUE",ALIGN_LEFT, BLACK, PINK)
+    PrintAttr(5, 5, "2. Book of spiders (BoS)",ALIGN_LEFT, ttAttr)
+    PrintAttr(5, 32, "50g",ALIGN_LEFT, ttAttr)
+
+    PrintAttr(6, 5, "3. Book of chests (BoC)",ALIGN_LEFT, ttAttr)
+    PrintAttr(6, 32, "20g",ALIGN_LEFT, ttAttr)
+
+    PrintAttr(7, 5, "4. Book of diamonds (BoD)",ALIGN_LEFT, ttAttr)
+    PrintAttr(7, 32, "20g",ALIGN_LEFT, ttAttr)
+
+    PrintAttr(10, 5, "Inventory:",ALIGN_LEFT, ttAttr)
+    if inventory = 0 THEN PrintAttr(10, 17, "(empty)",ALIGN_LEFT,ttAttr)
+    if inventory = 1 THEN PrintAttr(10, 17, "BoS    ",ALIGN_LEFT,ttAttr)
+    if inventory = 2 THEN PrintAttr(10, 17, "BoC    ",ALIGN_LEFT,ttAttr)
+    if inventory = 3 THEN PrintAttr(10, 17, "BoD    ",ALIGN_LEFT,ttAttr)
+    if inventory <> 0 THEN PrintAttr(12, 5, "9. sell",ALIGN_LEFT, ttAttr) else PrintAttr(12, 5, "           ",ALIGN_LEFT)
+
+    PrintAttr(20, 17, "1. CONTINUE",ALIGN_LEFT, attMenu)
     ClearEnter() 
     DO
         keyb = CODE INKEY$
-        if (keyb = 49) THEN GOTO HOME_SCREEN
-        if (keyb = 48) THEN GOTO END_PROGRAMM
+        if (keyb = KEY1) THEN GOTO HOME_SCREEN
+        if (keyb = KEY0) THEN GOTO END_PROGRAMM
+        if (keyb >= KEY2 AND keyb <= KEY4) THEN BuyItem(keyb):GOTO SHOP_REDRAW
+        if (keyb = KEY9) THEN SellItem():GOTO SHOP_REDRAW
     LOOP UNTIL FALSE
 
 
@@ -579,10 +662,9 @@ INTRO_SCREEN:
     paper BLACK: ink WHITE: border BLACK: cls
 
     RESTORE intro_text
-    TypeWriteAt()
-    
+    TypeWriteAt()    
 
-    PrintAt(20, 17, "1. CONTINUE",ALIGN_LEFT, BLACK, PINK)
+    PrintAttr(20, 17, "1. CONTINUE",ALIGN_LEFT, attMenu)
 
     ClearEnter() 
     DO

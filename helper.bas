@@ -30,6 +30,11 @@ SUB ClearEnter()
     END WHILE
 END SUB
 
+SUB PrintAttr(y as uByte, x as uByte, strAt$ as string, alignAt as Byte = ALIGN_LEFT, attrAt as Byte = -1)
+    if attrAt > -1 THEN POKE 23693, attrAt
+    PrintAt(y,x,strAt$, alignAt)
+END SUB
+
 ' Prints a string at a specified position on the screen with optional formatting.
 ' Parameters:
 '   y        - The row position (0-based).
@@ -39,7 +44,6 @@ END SUB
 '   paperAt  - The paper color (default: -1, no change).
 '   inkAt    - The ink color (default: -1, no change).
 SUB PrintAt(y as uByte, x as uByte, strAt$ as string, alignAt as Byte = ALIGN_LEFT, paperAt as Byte = -1, inkAt as Byte = -1 )
-    '0 = Left, 1 = Center, 2 = Right'
 
     DIM attr as uByte = PEEK(23693)
     DIM paperOld as Byte = (attr & 56) / 8
@@ -72,7 +76,7 @@ SUB TypeWrite(y as uByte, x as uByte, strAt$ as string, delay as uByte, attrAt a
     if attrAt > -1 THEN POKE 23693, attrAt
 
     FOR i = 0 TO LEN(strAt$)
-        PrintAt(y, x + i - 1, strAt$(i TO i), ALIGN_LEFT, -1, -1)
+        PrintAttr(y, x + i - 1, strAt$(i TO i), ALIGN_LEFT)
         Wait(delay)
     NEXT i
 END SUB
