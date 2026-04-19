@@ -66,6 +66,9 @@ SUB PrintAt(y as uByte, x as uByte, strAt$ as string, alignAt as Byte = ALIGN_LE
 END SUB
 
 SUB TypeWrite(y as uByte, x as uByte, strAt$ as string, delay as uByte, attrAt as Byte = -1)
+
+    if strAt$ = "" THEN Wait(delay * 10) : RETURN
+
     if attrAt > -1 THEN POKE 23693, attrAt
 
     FOR i = 0 TO LEN(strAt$)
