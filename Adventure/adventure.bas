@@ -42,6 +42,8 @@ CONST attBlank as ubyte = WHITE + WHITE * 8
 CONST attMenu as ubyte = PINK + BLACK * 8
 CONST attDef as ubyte = WHITE + BLACK * 8
 CONST attBlack as ubyte = BLACK + BLACK * 8
+CONST attGold as ubyte = YELLOW + BLACK * 8
+CONST attEnergy as ubyte = CYAN + BLACK * 8
 
 const scrH as ubyte = (SCREEN_HEIGHT - 2) * 8
 const scrW as ubyte = (SCREEN_WIDTH - 1) * 8
@@ -64,7 +66,7 @@ DIM joy as ubyte = 0
 
 DIM hasKey as BOOLEAN = FALSE
 
-DIM GOLD as uinteger = 500
+DIM GOLD as uinteger = 0
 DIM gold as ubyte = 0
 DIM energy as byte = 100
 
@@ -375,35 +377,39 @@ SUB TypeWriteAt()
 END SUB
 
 SUB DrawHint(hint as string)
-    'PrintAt(SCREEN_HEIGHT - 1 , 0, LINE_EMPTY42)
-    'print at SCREEN_HEIGHT - 1,0; paper BLACK; ink WHITE; LINE_EMPTY
-    'ClearLine(SCREEN_HEIGHT - 1)
     ClearAttrLine(SCREEN_HEIGHT - 1,attBlack)
     PrintAt(SCREEN_HEIGHT - 1 , 0, hint,0,-1, YELLOW)
 END SUB
 
-SUB DrawUI()
-    PrintAt(0, 0, "Gold: " + str(gold) + "  ", ALIGN_LEFT, BLACK, YELLOW)
+SUB DrawUI(isHome as BOOLEAN = FALSE)
+
+    if isHome THEN
+        PrintAttr(0, 0, "Gold: " + str(GOLD) + "  ", ALIGN_LEFT, attGold)
+    else
+        PrintAttr(0, 0, "Gold: " + str(gold) + "  ", ALIGN_LEFT, attGold)
+    END IF
+
     DIM e as string = str(energy)
     while LEN(e) < 3
         e = " " + e
     END WHILE
-    PrintAt(0, SCREEN_WIDTH42 - 1, "  Energy: " + e + " ", ALIGN_RIGHT, BLACK, CYAN)
+    PrintAttr(0, SCREEN_WIDTH42 , "  Energy: " + e , ALIGN_RIGHT, attEnergy)
     
-    DIM itemStr as string = "(empty)"
-    if inventory = 1 THEN itemStr = "BoC (1. use)"
-    if inventory = 2 THEN itemStr = "BoD (1. use)"
-    if inventory = 3 THEN itemStr = "BoS (1. use)"
-    if hasKey THEN itemStr = "  KEY"
+    DIM itemStr as string = "(empty)              "
+    if inventory = 1 THEN itemStr = "BoC"
+    if inventory = 2 THEN itemStr = "BoD"
+    if inventory = 3 THEN itemStr = "BoS"
+    if inventory > 0 AND isHome = FALSE THEN itemStr = itemStr + "  (press 1 to use)" 
+    PrintAttr(1, 0, "Inventory: " + itemStr, ALIGN_LEFT, attDef)
+  
+    if isHome = FALSE THEN 
+        if hasKey THEN 
+            PrintAttr(1, SCREEN_WIDTH42 , "HAS KEY", ALIGN_RIGHT, attGold)
+        else
+            PrintAttr(1, SCREEN_WIDTH42 , " NO KEY", ALIGN_RIGHT, attDef)
+        END IF
+    END IF
 
-    'while LEN(itemStr) < 20
-    ''    itemStr = itemStr + " "
-    'END WHILE
-
-
-    'ClearLine(1)
-    ClearAttrLine(1,attBlack)
-    PrintAt(1, 0, "Inventory: " + itemStr, ALIGN_LEFT, BLACK, WHITE)
 END SUB
 
 FUNCTION CheckKey(dir as ubyte) as BOOLEAN
@@ -583,7 +589,7 @@ VICTORY_SCREEN:
 
 HOME_SCREEN:
     dzx0Standard(@inside_screen_data, 16384)
-    DrawUI()
+    DrawUI(TRUE)
 
     PrintAttr(4, 18, "1. ADVENTURE",ALIGN_LEFT, attDef)
     PrintAttr(19, 3, " 2. REST",ALIGN_LEFT, attDef)
