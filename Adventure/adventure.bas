@@ -104,7 +104,7 @@ SUB Init()
 
     if gems < 3 then
         y = INT(RND * 100)
-        if y > 0 then PlaceItems(17, 1)
+        if y > 70 then PlaceItems(7, 1)
     end if
 
     PlaceItems(6, 3) 'Books
@@ -112,7 +112,7 @@ SUB Init()
     PlaceItems(2, 1) 'Key
 
     ShuffleBooks()
-    DrawField()
+    'DrawField()
 END SUB
 
 SUB PlaceItems(itemType as ubyte, itemCount as ubyte)
@@ -613,8 +613,9 @@ LOSE_SCREEN:
 
 VICTORY_SCREEN:
     GOLD = GOLD + gold
+
     Wait(70)
-    dzx0Standard(@victory_screen_data, 16384)
+    'dzx0Standard(@victory_screen_data, 16384)
     PAUSE 60
     PrintAttr(21, 17, "1. HOME",ALIGN_LEFT, attMenu)
     PrintAttr(22, 17, "0. EXIT",ALIGN_LEFT, attMenu)
