@@ -11,6 +11,7 @@ CONST CHR_CHEST_CLOSED as ubyte = 147
 CONST CHR_CHEST_OPENED as ubyte = 148
 CONST CHR_DIAMOND as ubyte = 149
 CONST CHR_BOOK as ubyte = 150
+CONST CHR_GEM as ubyte = 151
 
 CONST KEY0 as ubyte = 48
 CONST KEY1 as ubyte = 49
@@ -76,7 +77,12 @@ DIM moveCount as ubyte = 0
 DIM books(2) as ubyte = {1,2,3}
 DIM bookCount as ubyte = 0
 
+DIM gems as ubyte = 0
+DIM gemFound as BOOLEAN = FALSE
+
 DIM inventory as ubyte = 0
+
+DIM var as ubyte = 0
 
 SUB Init()
     DIM x as ubyte
@@ -86,15 +92,27 @@ SUB Init()
             field(x,y) = 0
         NEXT x
     NEXT y
-    PlaceItems(3, 15) 'Spiderwebs
-    PlaceItems(4, 5) 'Chests
-    PlaceItems(5, 5) 'Diamonds
+
+    y = INT(RND * 10)
+    PlaceItems(3, 15+y) 'Spiderwebs
+
+    y = INT(RND * 5)
+    PlaceItems(4, 5+y) 'Chests
+
+    y = INT(RND * 3)
+    PlaceItems(5, 5+y) 'Diamonds
+
+    if gems < 3 then
+        y = INT(RND * 100)
+        if y > 0 then PlaceItems(17, 1)
+    end if
+
     PlaceItems(6, 3) 'Books
     PlaceItems(1, 1) 'Door
     PlaceItems(2, 1) 'Key
 
     ShuffleBooks()
-    'DrawField()
+    DrawField()
 END SUB
 
 SUB PlaceItems(itemType as ubyte, itemCount as ubyte)
@@ -209,6 +227,20 @@ FUNCTION DrawBook(x as ubyte, y as ubyte) as BOOLEAN
     RETURN FALSE
 END FUNCTION
 
+FUNCTION DrawGem(x as ubyte, y as ubyte) as BOOLEAN
+
+    if field(x,y) = 17 THEN
+        DIM c as ubyte = RED
+        if gems = 0 c = RED
+        if gems = 1 c = BLUE
+        if gems = 2 c = CYAN
+        print at y,x; paper WHITE; ink c; CHR(CHR_GEM)
+        RETURN TRUE
+    END IF
+    RETURN FALSE
+END FUNCTION
+
+
 SUB DrawField()
     DIM x as ubyte
     DIM y as ubyte
@@ -233,6 +265,7 @@ SUB DrawItem(x as byte, y as byte)
     if DrawChest(x,y) THEN RETURN
     if DrawDiamond(x,y) THEN RETURN
     if DrawBook(x,y) THEN RETURN
+    if DrawGem(x,y) THEN RETURN
 END SUB
 
 SUB UseBook(bookType as ubyte)
@@ -265,16 +298,6 @@ FUNCTION ExecuteCell(x as ubyte, y as ubyte) as BOOLEAN
         field(x,y) = 26 'mark as taken
 
         UseBook(books(bookCount-1))
-
-        'DIM bookType as string = "unknown"
-        'FOR yy = 0 TO SCREEN_HEIGHT - 1
-        ''    FOR xx = 0 TO SCREEN_WIDTH - 1
-        ''        if books(bookCount-1) = 3 AND field(xx,yy) = 3 THEN field(xx,yy) = 13: DrawItem(xx,yy): bookType = "spiderwebs"
-        ''        if books(bookCount-1) = 1 AND field(xx,yy) = 4 THEN field(xx,yy) = 14: DrawItem(xx,yy): bookType = "chest"
-        ''        if books(bookCount-1) = 2 AND field(xx,yy) = 5 THEN field(xx,yy) = 15: DrawItem(xx,yy): bookType = "diamond"
-        ''    NEXT xx
-        'NEXT yy
-        'DrawHint("Magic book! Open all " + bookType + "! +10 energy.")
 
         PlaySound(@SoundChest)
         Wait(50)
@@ -312,10 +335,11 @@ FUNCTION ExecuteCell(x as ubyte, y as ubyte) as BOOLEAN
 
     if field(x,y) = 14 THEN 'chest'
         DrawItem(x,y)
-        gold = gold + 10
+        yy = INT(RND * 10)
+        gold = gold + 10 + yy
         energy = energy - 1
         field(x,y) = 24 'mark as opened
-        DrawHint("You opened a chest and found 10 gold!")
+        DrawHint("You opened a chest and found " + str(10+yy)  + " gold!")
 
         PlaySound(@SoundChest)
         Wait(50)
@@ -349,10 +373,26 @@ FUNCTION ExecuteCell(x as ubyte, y as ubyte) as BOOLEAN
                 if field(xx,yy) = 11 THEN DrawDoor(xx,yy)
             next yy
         next xx
+        PlaySound(@SoundChest)
         Wait(50)
         DrawItem(x,y)
         return TRUE
     END IF
+
+    if field(x,y) = 17 then
+        DrawItem(x,y)
+        field(x,y) = 27 'mark as taken
+        gemFound = TRUE
+        gems = gems + 1
+        if gems = 1 then DrawHint("You found a ruby!")
+        if gems = 2 then DrawHint("You found a sapphire!")
+        if gems = 3 then DrawHint("You found a amethyst")
+        PlaySound(@SoundChest)
+        Wait(50)
+        DrawItem(x,y)
+        return TRUE
+
+    end if
 
     return FALSE
 END FUNCTION
@@ -426,7 +466,6 @@ END FUNCTION
 '================== ==============='
 
 paper BLACK: ink WHITE: border BLACK: cls
-POKE UINTEGER 23675, @Items
 
 dzx0Standard(@title_screen_data, 16384)
 
@@ -446,6 +485,7 @@ GOTO INTRO_SCREEN
 
 PROGRAM:
     paper BLACK: ink WHITE: border BLACK: cls
+    POKE UINTEGER 23675, @Items
 
     Init()
 
@@ -590,6 +630,29 @@ VICTORY_SCREEN:
 HOME_SCREEN:
     dzx0Standard(@inside_screen_data, 16384)
     DrawUI(TRUE)
+    
+    POKE UINTEGER 23675, @Gems
+
+    var = WHITE
+    if gems = 1 then var = RED
+    print at 7,17; paper BLACK; ink var; CHR(144)
+    print at 7,18; paper BLACK; ink var; CHR(145)
+    print at 8,17; paper BLACK; ink var; CHR(146)
+    print at 8,18; paper BLACK; ink var; CHR(147)
+
+    var = WHITE
+    if gems = 2 then var = BLUE
+    print at 10,16; paper BLACK; ink var; CHR(144)
+    print at 10,17; paper BLACK; ink var; CHR(145)
+    print at 11,16; paper BLACK; ink var; CHR(146)
+    print at 11,17; paper BLACK; ink var; CHR(147)
+
+    var = WHITE
+    if gems = 3 then var = CYAN
+    print at 12,18; paper BLACK; ink var; CHR(144)
+    print at 12,19; paper BLACK; ink var; CHR(145)
+    print at 13,18; paper BLACK; ink var; CHR(146)
+    print at 13,19; paper BLACK; ink var; CHR(147)
 
     PrintAttr(4, 18, "1. ADVENTURE",ALIGN_LEFT, attDef)
     PrintAttr(19, 3, " 2. REST",ALIGN_LEFT, attDef)
