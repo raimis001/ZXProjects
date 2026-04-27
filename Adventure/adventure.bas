@@ -76,7 +76,7 @@ DIM gold as ubyte = 0
 DIM energy as byte = 100
 
 
-DIM moveCount as ubyte = 0
+DIM moveCount as uinteger = 0
 
 DIM books(2) as ubyte = {1,2,3}
 DIM bookCount as ubyte = 0
