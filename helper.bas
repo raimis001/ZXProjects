@@ -22,23 +22,13 @@ CONST SCREEN_WIDTH  AS UBYTE = 32
 CONST SCREEN_WIDTH42 AS UBYTE = 42
 CONST SCREEN_HEIGHT  AS UBYTE = 24
 
-CONST LINE_EMPTY42 AS string = "                                          " '42 spaces
-CONST LINE_EMPTY AS string = "                               " '32 spaces
+'CONST LINE_EMPTY42 AS string = "                                          " '42 spaces
+'CONST LINE_EMPTY AS string = "                               " '32 spaces
 
 SUB ClearEnter() 
     WHILE INKEY$ <> ""
         PAUSE 1
     END WHILE
-END SUB
-
-SUB ClearLine(y as uByte, attrAt as Byte = -1)
-    if attrAt > -1 THEN POKE 23693, attrAt
-    print at y, 0; LINE_EMPTY
-END SUB
-
-SUB PrintAttr(y as uByte, x as uByte, strAt$ as string, alignAt as Byte = ALIGN_LEFT, attrAt as Byte = -1)
-    if attrAt > -1 THEN POKE 23693, attrAt
-    PrintAt(y,x,strAt$, alignAt)
 END SUB
 
 ' Prints a string at a specified position on the screen with optional formatting.
@@ -49,40 +39,29 @@ END SUB
 '   alignAt  - The alignment of the string (0 = Left, 1 = Center, 2 = Right).
 '   paperAt  - The paper color (default: -1, no change).
 '   inkAt    - The ink color (default: -1, no change).
-SUB PrintAt(y as uByte, x as uByte, strAt$ as string, alignAt as Byte = ALIGN_LEFT, paperAt as Byte = -1, inkAt as Byte = -1 )
+SUB PrintAt(y as uByte, x as uByte, strAt$ as string, alignAt as Byte = ALIGN_LEFT, attrAt as Byte = -1)
 
-    DIM attr as uByte = PEEK(23693)
-    DIM paperOld as Byte = (attr & 56) / 8
-    DIM inkOld as Byte = attr & 7 
-    'DIM brightOld as Byte = (attr AND 128) / 128
+    if attrAt > -1 then POKE 23693, attrAt
 
     DIM l as uByte = LEN(strAt$)
 
-    if paperAt > -1 THEN PAPER paperAt
-    if inkAt > -1 THEN INK inkAt
-    
-    if alignAt = ALIGN_CENTER then'Center
-        x = x + (SCREEN_WIDTH42 - x - l) / 2
-    else if alignAt = ALIGN_RIGHT then'Right
-        x = x - l
-    end if
+    if alignAt = ALIGN_CENTER then x = x + (SCREEN_WIDTH42 - x - l) / 2
+    if alignAt = ALIGN_RIGHT then x = x - l
 
     printat42(y,x)
     print42(strAt$)
 
-    if paperAt > -1 AND paperOld <> (attr AND 56) / 8 THEN PAPER paperOld
-    if inkAt > -1 AND inkOld <> (attr AND 7) THEN INK inkOld
-
+    'if attrAt > -1 then POKE 23693, attr
 END SUB
 
 SUB TypeWrite(y as uByte, x as uByte, strAt$ as string, delay as uByte, attrAt as Byte = -1)
 
     if strAt$ = "" THEN Wait(delay * 10) : RETURN
 
-    if attrAt > -1 THEN POKE 23693, attrAt
+    'if attrAt > -1 THEN POKE 23693, attrAt
 
     FOR i = 0 TO LEN(strAt$)
-        PrintAttr(y, x + i - 1, strAt$(i TO i), ALIGN_LEFT)
+        PrintAt(y, x + i - 1, strAt$(i TO i), ALIGN_LEFT, attrAt)
         Wait(delay)
     NEXT i
 END SUB
@@ -131,26 +110,3 @@ SUB Wait(frameCount as uByte)
     NEXT n
 END SUB
 
-SUB ClearAttrLine(y as uByte, attr as uByte)
-    ASM
-        ld a, (ix+5)      ; y
-        ld l, a
-        ld h, 0
-        add hl, hl        ; *2
-        add hl, hl        ; *4
-        add hl, hl        ; *8
-        add hl, hl        ; *16
-        add hl, hl        ; *32
-
-        ld de, 22528
-        add hl, de        ; HL = addr
-
-        ld b, 32
-        ld a, (ix+7)      ; attr
-
-loop:
-        ld (hl), a
-        inc hl
-        djnz loop
-    END ASM
-END SUB

@@ -45,15 +45,19 @@ CONST attDef as ubyte = WHITE + BLACK * 8
 CONST attBlack as ubyte = BLACK + BLACK * 8
 CONST attGold as ubyte = YELLOW + BLACK * 8
 CONST attEnergy as ubyte = CYAN + BLACK * 8
+CONST attBook as ubyte = BLUE + BLACK * 8
+CONST attDiamond as ubyte = RED + BLACK * 8
+
 
 const scrH as ubyte = (SCREEN_HEIGHT - 2) * 8
 const scrW as ubyte = (SCREEN_WIDTH - 1) * 8
 
 DIM field(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1) as ubyte
 
+CONST ch_speed as ubyte = 1
+
 DIM ch_posY as ubyte = 2*8
 DIM ch_posX as ubyte = 2*8
-DIM ch_speed as ubyte = 1
 DIM oldX as ubyte
 DIM oldY as ubyte
 DIM cellX as ubyte
@@ -80,9 +84,16 @@ DIM bookCount as ubyte = 0
 DIM gems as ubyte = 0
 DIM gemFound as BOOLEAN = FALSE
 
-DIM inventory as ubyte = 0
+DIM chestsFound as ubyte = 0
+DIM chestsTotal as ubyte = 0
+DIM spidersFound as ubyte = 0
+DIM spidersTotal as ubyte = 0
+DIM diamondsFound as ubyte = 0
+DIM diamondsTotal as ubyte = 0
+DIM booksFound as ubyte = 0
+DIM booksTotal as ubyte = 0
 
-DIM var as ubyte = 0
+DIM inventory as ubyte = 0
 
 SUB Init()
     DIM x as ubyte
@@ -93,26 +104,32 @@ SUB Init()
         NEXT x
     NEXT y
 
-    y = INT(RND * 10)
-    PlaceItems(3, 15+y) 'Spiderwebs
+    spidersTotal = INT(RND * 10) + 15
+    spidersFound = 0
+    PlaceItems(3, spidersTotal) 'Spiderwebs
 
-    y = INT(RND * 5)
-    PlaceItems(4, 5+y) 'Chests
+    chestsTotal = INT(RND * 5) + 5
+    chestsFound = 0
+    PlaceItems(4, chestsTotal) 'Chests
 
-    y = INT(RND * 3)
-    PlaceItems(5, 5+y) 'Diamonds
+    diamondsTotal = INT(RND * 3) + 5
+    diamondsFound = 0
+    PlaceItems(5, diamondsTotal) 'Diamonds
 
     if gems < 3 then
         y = INT(RND * 100)
-        if y > 70 then PlaceItems(7, 1)
+        if y > 60 then PlaceItems(7, 1)
     end if
 
-    PlaceItems(6, 3) 'Books
+    booksTotal = INT(RND * 4)
+    booksFound = 0
+    if booksTotal > 0 then PlaceItems(6, booksTotal) 'Books
+
     PlaceItems(1, 1) 'Door
     PlaceItems(2, 1) 'Key
 
     ShuffleBooks()
-    'DrawField()
+
 END SUB
 
 SUB PlaceItems(itemType as ubyte, itemCount as ubyte)
@@ -128,10 +145,8 @@ SUB PlaceItems(itemType as ubyte, itemCount as ubyte)
 
         IF field(rx, ry) = 0 THEN
             field(rx, ry) = itemType
+            'if itemType > 10 then DrawItem(rx,ry)
             placed = placed + 1
-            'PrintAt(0, 0, str(itemType) + " " + str(rx) + ":" + str(ry) + " " + str(placed) + "        ", ALIGN_LEFT, -1, -1)
-            'DrawItem(rx, ry)
-            'Wait(20)
         END IF
     LOOP UNTIL placed = itemCount
 END SUB
@@ -167,7 +182,6 @@ SUB OpenCell(x as byte, y as byte, f as byte = 0)
 
 END SUB
 
-
 FUNCTION DrawKey(x as ubyte, y as ubyte) as BOOLEAN
     if field(x,y) <> 12 THEN RETURN FALSE
     
@@ -197,7 +211,6 @@ FUNCTION DrawSpiderweb(x as ubyte, y as ubyte) as BOOLEAN
     END IF
     RETURN FALSE
 END FUNCTION
-
 
 FUNCTION DrawChest(x as ubyte, y as ubyte) as BOOLEAN
     if field(x,y) = 14 THEN
@@ -240,16 +253,15 @@ FUNCTION DrawGem(x as ubyte, y as ubyte) as BOOLEAN
     RETURN FALSE
 END FUNCTION
 
-
-SUB DrawField()
-    DIM x as ubyte
-    DIM y as ubyte
-    FOR y = 0 TO SCREEN_HEIGHT - 1
-        FOR x = 0 TO SCREEN_WIDTH - 1
-            DrawItem(x,y)
-        NEXT x
-    NEXT y
-END SUB
+'SUB DrawField()
+''    DIM x as ubyte
+''    DIM y as ubyte
+''    FOR y = 0 TO SCREEN_HEIGHT - 1
+''        FOR x = 0 TO SCREEN_WIDTH - 1
+''            DrawItem(x,y)
+''        NEXT x
+''    NEXT y
+'END SUB
 
 SUB DrawItem(x as byte, y as byte)
     if (y < 2) THEN RETURN
@@ -272,16 +284,17 @@ SUB UseBook(bookType as ubyte)
     DIM xx as ubyte
     DIM yy as ubyte
     
-    DIM book as string = "unknown"
-
     FOR yy = 0 TO SCREEN_HEIGHT - 1
         FOR xx = 0 TO SCREEN_WIDTH - 1
-            if bookType = 1 AND field(xx,yy) = 4 THEN field(xx,yy) = 14: DrawItem(xx,yy): book = "chest"
-            if bookType = 2 AND field(xx,yy) = 5 THEN field(xx,yy) = 15: DrawItem(xx,yy): book = "diamond"
-            if bookType = 3 AND field(xx,yy) = 3 THEN field(xx,yy) = 13: DrawItem(xx,yy): book = "spiderwebs"
+            if bookType = 1 AND field(xx,yy) = 4 THEN field(xx,yy) = 14: DrawItem(xx,yy) 
+            if bookType = 2 AND field(xx,yy) = 5 THEN field(xx,yy) = 15: DrawItem(xx,yy)
+            if bookType = 3 AND field(xx,yy) = 3 THEN field(xx,yy) = 13: DrawItem(xx,yy)
         NEXT xx
     NEXT yy
-    DrawHint("Magic book! Open all " + book + "! +10 energy.")
+
+    if bookType = 1 THEN DrawHint("Magic book! Open all chests!")
+    if bookType = 2 THEN DrawHint("Magic book! Open all diamonds!")
+    if bookType = 3 THEN DrawHint("Magic book! Open all spiders!")
 
 END SUB
 
@@ -292,6 +305,7 @@ FUNCTION ExecuteCell(x as ubyte, y as ubyte) as BOOLEAN
     DIM yy as ubyte
 
     if field(x,y) = 16 THEN 'magic book'
+        booksFound = booksFound + 1
         DrawItem(x,y)
         bookCount = bookCount + 1
         energy = energy + 10
@@ -307,11 +321,12 @@ FUNCTION ExecuteCell(x as ubyte, y as ubyte) as BOOLEAN
     END IF
 
     if field(x,y) = 15 THEN 'diamond'
+        diamondsFound = diamondsFound + 1
         DrawItem(x,y)
         gold = gold + 20
         energy = energy + 5
         field(x,y) = 25 'mark as taken
-        DrawHint("You found a diamond! Gold +20, Energy +5.")
+        DrawHint("You found a diamond!")
 
         PlaySound(@SoundChest)
         Wait(50)
@@ -321,10 +336,11 @@ FUNCTION ExecuteCell(x as ubyte, y as ubyte) as BOOLEAN
     END IF
 
     if field(x,y) = 13 THEN 'spiderweb'
+        spidersFound  = spidersFound + 1
         DrawItem(x,y)
         energy = energy - 10
         field(x,y) = 23 'mark as taken
-        DrawHint("You got caught in a spiderweb! Energy -10.")
+        DrawHint("You got caught in a spiderweb!")
 
         PlaySound(@SoundSpiderWeb)
         Wait(70)
@@ -334,12 +350,13 @@ FUNCTION ExecuteCell(x as ubyte, y as ubyte) as BOOLEAN
     END IF
 
     if field(x,y) = 14 THEN 'chest'
+        chestsFound = chestsFound + 1
         DrawItem(x,y)
         yy = INT(RND * 10)
         gold = gold + 10 + yy
         energy = energy - 1
         field(x,y) = 24 'mark as opened
-        DrawHint("You opened a chest and found " + str(10+yy)  + " gold!")
+        DrawHint("You opened a chest!")
 
         PlaySound(@SoundChest)
         Wait(50)
@@ -356,7 +373,7 @@ FUNCTION ExecuteCell(x as ubyte, y as ubyte) as BOOLEAN
     if field(x,y) = 11 THEN 'door'
         if hasKey THEN
             DrawHint("You used the key to open the door!")
-            GOTO VICTORY_SCREEN
+            VICTORY_SCREEN()
         else
             DrawHint("The door is locked. Find the key!")
         END IF
@@ -367,7 +384,7 @@ FUNCTION ExecuteCell(x as ubyte, y as ubyte) as BOOLEAN
         DrawItem(x,y)
         field(x,y) = 22 'mark as taken
         hasKey = TRUE
-        DrawHint("You found the key! Now find the door!")
+        DrawHint("You found the key!")
         for xx = 0 to SCREEN_WIDTH - 1
             for yy = 0 to SCREEN_HEIGHT - 1
                 if field(xx,yy) = 11 THEN DrawDoor(xx,yy)
@@ -407,56 +424,57 @@ SUB DrawArea(x as ubyte, y as ubyte)
     next i
 END SUB
 
-SUB TypeWriteAt()
+SUB TypeWriteAt(y as ubyte,x as ubyte, til as ubyte)
     DIM tt as string
     DIM i as ubyte
-    FOR i = 0 TO 5
+    FOR i = 0 TO til - 1
         READ tt
-        TypeWrite(5 + i, 5, tt, 3, ttAttr)
+        TypeWrite(y + i, x, tt, 2, ttAttr)
     NEXT i
 END SUB
 
 SUB DrawHint(hint as string)
-    ClearAttrLine(SCREEN_HEIGHT - 1,attBlack)
-    PrintAt(SCREEN_HEIGHT - 1 , 0, hint,0,-1, YELLOW)
+    'ClearAttrLine(SCREEN_HEIGHT - 1,attBlack)
+    'print at SCREEN_HEIGHT - 1, 0; paper BLACK; ink BLACK; "                               "
+    PrintAt(SCREEN_HEIGHT - 1 , 0, hint, ALIGN_LEFT ,attGold)
 END SUB
 
 SUB DrawUI(isHome as BOOLEAN = FALSE)
 
     if isHome THEN
-        PrintAttr(0, 0, "Gold: " + str(GOLD) + "  ", ALIGN_LEFT, attGold)
+        PrintAt(0, 0, "Gold: " + str(GOLD) + "  ", ALIGN_LEFT, attGold)
     else
-        PrintAttr(0, 0, "Gold: " + str(gold) + "  ", ALIGN_LEFT, attGold)
+        PrintAt(0, 0, "Gold: " + str(gold) + "  ", ALIGN_LEFT, attGold)
     END IF
 
-    DIM e as string = str(energy)
-    while LEN(e) < 3
-        e = " " + e
+    DIM itemStr as string = str(energy)
+    while LEN(itemStr) < 3
+        itemStr = " " + itemStr
     END WHILE
-    PrintAttr(0, SCREEN_WIDTH42 , "  Energy: " + e , ALIGN_RIGHT, attEnergy)
+    PrintAt(0, SCREEN_WIDTH42 , "  Energy: " + itemStr , ALIGN_RIGHT, attEnergy)
     
-    DIM itemStr as string = "(empty)              "
+    itemStr = "(empty)              "
     if inventory = 1 THEN itemStr = "BoC"
     if inventory = 2 THEN itemStr = "BoD"
     if inventory = 3 THEN itemStr = "BoS"
     if inventory > 0 AND isHome = FALSE THEN itemStr = itemStr + "  (press 1 to use)" 
-    PrintAttr(1, 0, "Inventory: " + itemStr, ALIGN_LEFT, attDef)
+    PrintAt(1, 0, "Inventory: " + itemStr, ALIGN_LEFT, attDef)
   
     if isHome = FALSE THEN 
         if hasKey THEN 
-            PrintAttr(1, SCREEN_WIDTH42 , "HAS KEY", ALIGN_RIGHT, attGold)
+            PrintAt(1, SCREEN_WIDTH42 , "HAS KEY", ALIGN_RIGHT, attGold)
         else
-            PrintAttr(1, SCREEN_WIDTH42 , " NO KEY", ALIGN_RIGHT, attDef)
+            PrintAt(1, SCREEN_WIDTH42 , " NO KEY", ALIGN_RIGHT, attDef)
         END IF
     END IF
 
 END SUB
 
 FUNCTION CheckKey(dir as ubyte) as BOOLEAN
-    if dir = DIR_UP AND ((keyb bOR 32) = KEYW OR joy = 16) THEN RETURN TRUE
-    if dir = DIR_DOWN AND ((keyb bOR 32) = KEYS OR joy = 4) THEN RETURN TRUE
-    if dir = DIR_LEFT AND ((keyb bOR 32) = KEYA OR joy = 1) THEN RETURN TRUE
-    if dir = DIR_RIGHT AND ((keyb bOR 32) = KEYD OR joy = 2) THEN RETURN TRUE
+    if dir = DIR_UP AND ((keyb bOR 32) = KEYW OR joy = 16 OR keyb = KEY7) THEN RETURN TRUE
+    if dir = DIR_DOWN AND ((keyb bOR 32) = KEYS OR joy = 4 OR keyb = KEY6) THEN RETURN TRUE
+    if dir = DIR_LEFT AND ((keyb bOR 32) = KEYA OR joy = 1 OR keyb = KEY5) THEN RETURN TRUE
+    if dir = DIR_RIGHT AND ((keyb bOR 32) = KEYD OR joy = 2 OR keyb = KEY8) THEN RETURN TRUE
     RETURN FALSE
 END FUNCTION
 
@@ -465,23 +483,27 @@ END FUNCTION
 '== PROGRAM START                =='
 '================== ==============='
 
+START:
 paper BLACK: ink WHITE: border BLACK: cls
 
 dzx0Standard(@title_screen_data, 16384)
 
 PAUSE 50
-PrintAttr(20, 17, "1. START",ALIGN_LEFT, attMenu)
-PrintAttr(21, 17, "0. EXIT",ALIGN_LEFT, attMenu)
+PrintAt(20, 17, "1. START",ALIGN_LEFT, attMenu)
+PrintAt(21, 17, "2. HELP",ALIGN_LEFT, attMenu)
+PrintAt(22, 17, "0. EXIT",ALIGN_LEFT, attMenu)
+
 ClearEnter() 
 DO
     keyb = CODE INKEY$
     if keyb = KEY0 THEN GOTO END_PROGRAMM
+    if keyb = KEY2 THEN HELP_SCREEN()
 LOOP UNTIL keyb = KEY1
 ClearEnter()
 
 randomize
 
-GOTO INTRO_SCREEN
+INTRO_SCREEN()
 
 PROGRAM:
     paper BLACK: ink WHITE: border BLACK: cls
@@ -501,6 +523,8 @@ PROGRAM:
     moveY = 0
 
     hasKey = FALSE
+    gemFound = FALSE
+
     moveCount = 0
     bookCount = 0
 
@@ -570,9 +594,7 @@ PROGRAM:
                 OpenCell(cellX - 1, cellY)
             END IF
 
-            'ClearLine(SCREEN_HEIGHT - 1)
-            ClearAttrLine(SCREEN_HEIGHT - 1,attBlack)
-            'PrintAt(SCREEN_HEIGHT - 1 , 0, LINE_EMPTY42)
+            print at SCREEN_HEIGHT - 1, 0; paper BLACK; ink BLACK; "                               "
 
             if ExecuteCell(cellX, cellY) <> TRUE THEN
                 PlaySound(@SoundStep)
@@ -581,7 +603,7 @@ PROGRAM:
             moveCount = moveCount + 1
             if moveCount MOD 5 = 0 THEN energy = energy - 1
 
-            if energy <= 0 then goto LOSE_SCREEN
+            if energy <= 0 then LOSE_SCREEN()
     
             DrawUI()               
 
@@ -595,95 +617,122 @@ PROGRAM:
 
     LOOP UNTIL FALSE
 
-LOSE_SCREEN:
+SUB LOSE_SCREEN()
+    if gemFound then gems = gems - 1
     Wait(70)
     dzx0Standard(@lose_screen_data, 16384)
     PAUSE 60
 
-    PrintAttr(20, 16, "  YOU LOSE  ",ALIGN_LEFT, attMenu)
-    PrintAttr(21, 16, " 1. HOME ",ALIGN_LEFT, attMenu)
-    PrintAttr(22, 16, " 0. EXIT    ",ALIGN_LEFT, attMenu)
+    PrintAt(20, 16, "  YOU LOSE  ",ALIGN_LEFT, attMenu)
+    PrintAt(21, 16, " 1. HOME "   ,ALIGN_LEFT, attMenu)
+    PrintAt(22, 16, " 0. EXIT    ",ALIGN_LEFT, attMenu)
 
     ClearEnter()
     DO
         keyb = CODE INKEY$
-        if (keyb = KEY1) THEN GOTO HOME_SCREEN
+        if (keyb = KEY1) THEN HOME_SCREEN()
         if (keyb = KEY0) THEN GOTO END_PROGRAMM
     LOOP UNTIL FALSE
+END SUB
 
-VICTORY_SCREEN:
+SUB VICTORY_SCREEN()
     GOLD = GOLD + gold
-
     Wait(70)
-    'dzx0Standard(@victory_screen_data, 16384)
+    paper BLACK: ink WHITE: border BLACK: cls
+
+    PrintAt(3,21,"YOU FOUND THE EXIT", ALIGN_CENTER, attGold)
+    PrintAt(5,5,"you spend moves: " + str(moveCount), ALIGN_LEFT, attDef)
+    PrintAt(6,5,"chests found: " + str(chestsFound) + "/" + str(chestsTotal), ALIGN_LEFT, attDef)
+    PrintAt(7,5,"diamonds found: " + str(diamondsFound) + "/" + str(diamondsTotal), ALIGN_LEFT, attDef)
+    PrintAt(8,5,"tangled in webs: " + str(spidersFound) + "/" + str(spidersTotal), ALIGN_LEFT, attDef)
+
+    if gemFound then
+        if gems = 1 then restore rubin_text: TypeWriteAt(10, 2, 5)
+        if gems = 2 then restore sapphire_text: TypeWriteAt(10, 2, 5)
+        if gems = 3 then restore ametist_text: TypeWriteAt(10, 2, 7)        
+    end if
+
     PAUSE 60
-    PrintAttr(21, 17, "1. HOME",ALIGN_LEFT, attMenu)
-    PrintAttr(22, 17, "0. EXIT",ALIGN_LEFT, attMenu)
+
+    PrintAt(21, 17, "1. CONTINUE",ALIGN_LEFT, attMenu)
+    PrintAt(22, 17, "0. EXIT",ALIGN_LEFT, attMenu)
 
     ClearEnter()
     DO
         keyb = CODE INKEY$
-        if (keyb = KEY1) <> 0 THEN GOTO HOME_SCREEN
-        if (keyb = KEY0) <> 0 THEN GOTO END_PROGRAMM
+        if keyb = KEY1 THEN 
+            if gems < 3 then HOME_SCREEN() else END_SCREEN()
+        end if
+        if keyb = KEY0 THEN GOTO END_PROGRAMM
     LOOP UNTIL FALSE
+END SUB
     
+SUB END_SCREEN()
+    dzx0Standard(@victory_screen_data, 16384)
+    PAUSE 60
+    PrintAt(21, 17, "1. HOME",ALIGN_LEFT, attMenu)
+    PrintAt(22, 17, "0. EXIT",ALIGN_LEFT, attMenu)
 
-HOME_SCREEN:
+    ClearEnter()
+    DO
+        keyb = CODE INKEY$
+        if keyb = KEY1 THEN HOME_SCREEN()
+        if keyb = KEY0 THEN GOTO END_PROGRAMM
+    LOOP UNTIL FALSE
+END SUB
+
+SUB HOME_SCREEN()
     dzx0Standard(@inside_screen_data, 16384)
     DrawUI(TRUE)
     
     POKE UINTEGER 23675, @Gems
 
-    var = WHITE
-    if gems = 1 then var = RED
-    print at 7,17; paper BLACK; ink var; CHR(144)
-    print at 7,18; paper BLACK; ink var; CHR(145)
-    print at 8,17; paper BLACK; ink var; CHR(146)
-    print at 8,18; paper BLACK; ink var; CHR(147)
+    DIM c as ubyte = WHITE
+    if gems >= 1 then c = RED
+    print at 7,17; paper BLACK; ink c; CHR(144)+CHR(145)
+    print at 8,17; paper BLACK; ink c; CHR(146)+CHR(147)
 
-    var = WHITE
-    if gems = 2 then var = BLUE
-    print at 10,16; paper BLACK; ink var; CHR(144)
-    print at 10,17; paper BLACK; ink var; CHR(145)
-    print at 11,16; paper BLACK; ink var; CHR(146)
-    print at 11,17; paper BLACK; ink var; CHR(147)
+    c = WHITE
+    if gems >= 2 then c = BLUE
+    print at 10,16; paper BLACK; ink c; CHR(144)+CHR(145)
+    print at 11,16; paper BLACK; ink c; CHR(146)+CHR(147)
 
-    var = WHITE
-    if gems = 3 then var = CYAN
-    print at 12,18; paper BLACK; ink var; CHR(144)
-    print at 12,19; paper BLACK; ink var; CHR(145)
-    print at 13,18; paper BLACK; ink var; CHR(146)
-    print at 13,19; paper BLACK; ink var; CHR(147)
+    c = WHITE
+    if gems >= 3 then c = CYAN
+    print at 12,18; paper BLACK; ink c; CHR(144)+CHR(145)
+    print at 13,18; paper BLACK; ink c; CHR(146)+CHR(147)
 
-    PrintAttr(4, 18, "1. ADVENTURE",ALIGN_LEFT, attDef)
-    PrintAttr(19, 3, " 2. REST",ALIGN_LEFT, attDef)
-    PrintAttr(7, 33,"3. SHOP",ALIGN_LEFT, attDef)
+    PrintAt(4, 18, "1. ADVENTURE",ALIGN_LEFT, attDef)
+    PrintAt(19, 3, "2. REST",ALIGN_LEFT, attDef)
+    PrintAt(7, 33, "3. SHOP",ALIGN_LEFT, attDef)
 
     ClearEnter()
     DO
         keyb = CODE INKEY$
-        if (keyb = 49) THEN GOTO PROGRAM
-        if (keyb = 50) THEN GOTO REST_SCREEN
-        if (keyb = 51) THEN GOTO SHOP_SCREEN
-        if (keyb = 48) THEN GOTO END_PROGRAMM
+        if keyb = KEY1 THEN ClearEnter():GOTO PROGRAM
+        if keyb = KEY2 THEN REST_SCREEN()
+        if keyb = KEY3 THEN SHOP_SCREEN()
+        if keyb = KEY0 THEN GOTO END_PROGRAMM
         
     LOOP UNTIL FALSE 
+END SUB
 
-REST_SCREEN:
+SUB REST_SCREEN()
     energy = 100
     paper BLACK: ink WHITE: border BLACK: cls
 
     restore rest_text
-    TypeWriteAt()
+    TypeWriteAt(5, 5, 5)
 
-    PrintAttr(20, 17, "1. CONTINUE",ALIGN_LEFT, attMenu)
+    PrintAt(20, 17, "1. CONTINUE",ALIGN_LEFT, attMenu)
 
     ClearEnter() 
     DO
         keyb = CODE INKEY$
-        if (keyb = KEY1) THEN GOTO HOME_SCREEN
-        if (keyb = KEY0) THEN GOTO END_PROGRAMM
+        if keyb = KEY1 THEN HOME_SCREEN()
+        if keyb = KEY0 THEN GOTO END_PROGRAMM
     LOOP UNTIL FALSE
+END SUB
 
 SUB SellItem()
     if inventory = 0 THEN 
@@ -692,19 +741,19 @@ SUB SellItem()
     END IF
 
     if inventory = 1 THEN 'Book of chests
-        GOLD = GOLD + 20
+        GOLD = GOLD + 50
         inventory = 0
         DrawHint("You sold the Book of Chests!")
     END IF
 
     if inventory = 2 THEN 'Book of diamonds
-        GOLD = GOLD + 20
+        GOLD = GOLD + 50
         inventory = 0
         DrawHint("You sold the Book of Diamonds!")
     END IF
 
     if inventory = 3 THEN 'Book of spiders
-        GOLD = GOLD + 50
+        GOLD = GOLD + 100
         inventory = 0
         DrawHint("You sold the Book of Spiders!")
     END IF
@@ -717,80 +766,114 @@ SUB BuyItem(item as ubyte)
         RETURN
     END IF
 
-    if item = KEY2 AND GOLD >= 20 AND inventory = 0 THEN 'Book of chests
-        GOLD = GOLD - 20
+    if item = KEY2 AND GOLD >= 50 AND inventory = 0 THEN 'Book of chests
+        GOLD = GOLD - 50
         inventory = 1
         DrawHint("You bought the Book of Chests!")
     END IF
 
-    if item = KEY3 AND GOLD >= 20 AND inventory = 0 THEN 'Book of diamonds
-        GOLD = GOLD - 20
+    if item = KEY3 AND GOLD >= 50 AND inventory = 0 THEN 'Book of diamonds
+        GOLD = GOLD - 50
         inventory = 2
         DrawHint("You bought the Book of Diamonds!")
     END IF
 
-    if item = KEY4 AND GOLD >= 50 AND inventory = 0 THEN 'Book of spiders
-        GOLD = GOLD - 50
+    if item = KEY4 AND GOLD >= 100 AND inventory = 0 THEN 'Book of spiders
+        GOLD = GOLD - 100
         inventory = 3
         DrawHint("You bought the Book of Spiders!")
     END IF
 
 END SUB
 
-SHOP_SCREEN:
+SUB SHOP_SCREEN()
     paper BLACK: ink WHITE: border BLACK: cls
     SHOP_REDRAW:
-    PrintAttr(2, 5, "Welcome to the shop!",ALIGN_LEFT, attDef)
-    PrintAt(3, 5, "Your gold: " + str(GOLD),ALIGN_LEFT, BLACK, YELLOW)
+    PrintAt(2, 5, "Welcome to the shop!",ALIGN_LEFT, attDef)
+    PrintAt(3, 5, "Your gold: " + str(GOLD),ALIGN_LEFT, attGold)
 
-    PrintAttr(5, 5, "2. Book of chests (BoC)",ALIGN_LEFT, ttAttr)
-    PrintAttr(5, 32, "20g",ALIGN_LEFT, ttAttr)
+    PrintAt(5, 5, "2. Book of chests (BoC)",ALIGN_LEFT, ttAttr)
+    PrintAt(5, 32, "50g",ALIGN_LEFT, ttAttr)
 
-    PrintAttr(6, 5, "3. Book of diamonds (BoD)",ALIGN_LEFT, ttAttr)
-    PrintAttr(6, 32, "20g",ALIGN_LEFT, ttAttr)
+    PrintAt(6, 5, "3. Book of diamonds (BoD)",ALIGN_LEFT, ttAttr)
+    PrintAt(6, 32, "50g",ALIGN_LEFT, ttAttr)
 
-    PrintAttr(7, 5, "4. Book of spiders (BoS)",ALIGN_LEFT, ttAttr)
-    PrintAttr(7, 32, "50g",ALIGN_LEFT, ttAttr)
+    PrintAt(7, 5, "4. Book of spiders (BoS)",ALIGN_LEFT, ttAttr)
+    PrintAt(7, 32, "100g",ALIGN_LEFT, ttAttr)
 
-    PrintAttr(10, 5, "Inventory:",ALIGN_LEFT, ttAttr)
-    if inventory = 0 THEN PrintAttr(10, 17, "(empty)",ALIGN_LEFT,ttAttr)
+    PrintAt(10, 5, "Inventory:",ALIGN_LEFT, ttAttr)
 
-    if inventory = 1 THEN PrintAttr(10, 17, "BoC    ",ALIGN_LEFT,ttAttr)
-    if inventory = 2 THEN PrintAttr(10, 17, "BoD    ",ALIGN_LEFT,ttAttr)
-    if inventory = 3 THEN PrintAttr(10, 17, "BoS    ",ALIGN_LEFT,ttAttr)
+    if inventory = 0 THEN PrintAt(10, 17, "(empty)",ALIGN_LEFT,ttAttr)
 
-    if inventory <> 0 THEN PrintAttr(12, 5, "9. sell",ALIGN_LEFT, ttAttr) else PrintAttr(12, 5, "           ",ALIGN_LEFT)
+    if inventory = 1 THEN PrintAt(10, 17, "BoC    ",ALIGN_LEFT,ttAttr)
+    if inventory = 2 THEN PrintAt(10, 17, "BoD    ",ALIGN_LEFT,ttAttr)
+    if inventory = 3 THEN PrintAt(10, 17, "BoS    ",ALIGN_LEFT,ttAttr)
 
-    PrintAttr(20, 17, "1. CONTINUE",ALIGN_LEFT, attMenu)
+    if inventory <> 0 THEN PrintAt(12, 5, "9. sell",ALIGN_LEFT, ttAttr) else PrintAt(12, 5, "           ",ALIGN_LEFT)
+
+    PrintAt(20, 17, "1. CONTINUE",ALIGN_LEFT, attMenu)
     ClearEnter() 
     DO
         keyb = CODE INKEY$
-        if (keyb = KEY1) THEN GOTO HOME_SCREEN
+        if (keyb = KEY1) THEN HOME_SCREEN()
         if (keyb = KEY0) THEN GOTO END_PROGRAMM
         if (keyb >= KEY2 AND keyb <= KEY4) THEN BuyItem(keyb):GOTO SHOP_REDRAW
         if (keyb = KEY9) THEN SellItem():GOTO SHOP_REDRAW
     LOOP UNTIL FALSE
+END SUB
 
-
-INTRO_SCREEN:
+SUB INTRO_SCREEN()
     paper BLACK: ink WHITE: border BLACK: cls
 
     RESTORE intro_text
-    TypeWriteAt()    
+    TypeWriteAt(5, 5, 5)   
 
-    PrintAttr(20, 17, "1. CONTINUE",ALIGN_LEFT, attMenu)
+    PrintAt(20, 17, "1. CONTINUE",ALIGN_LEFT, attMenu)
 
     ClearEnter() 
     DO
         keyb = CODE INKEY$
-        if (keyb = KEY1) THEN GOTO HOME_SCREEN
-        if (keyb = KEY0) THEN GOTO END_PROGRAMM
+        if keyb = KEY1 THEN HOME_SCREEN()
+        if keyb = KEY0 THEN GOTO END_PROGRAMM
     LOOP UNTIL FALSE
+END SUB
+
+SUB HELP_SCREEN()
+    paper BLACK: ink WHITE: border BLACK: cls
+    POKE UINTEGER 23675, @Items
+
+    PrintAt(3,8,"HELP",ALIGN_CENTER, attMenu)
+    PrintAt(5,5,"Move character:",ALIGN_LEFT, attDef)
+    PrintAt(6,5,"  PC controlls - WASD",ALIGN_LEFT, attDef)
+    PrintAt(7,5,"  ZX controlls U(7) D(6) L(5) R(8)",ALIGN_LEFT, attDef)
+    PrintAt(8,5,"  KEPMPSTON joystick",ALIGN_LEFT, attDef)
+    
+    'PrintAttr(9,5,"",ALIGN_LEFT, attDef)
+
+    PrintAt(10,5,chr(CHR_SPIDERWEB),ALIGN_LEFT, attEnergy)
+    PrintAt(10,7,"Spider web: -10 energy",ALIGN_LEFT, attDef)
+    PrintAt(11,5,chr(CHR_CHEST_CLOSED),ALIGN_LEFT, attGold)
+    PrintAt(11,7,"Chest: random gold",ALIGN_LEFT, attDef)
+    PrintAt(12,5,chr(CHR_DIAMOND),ALIGN_LEFT, attDiamond)
+    PrintAt(12,7,"Diamond: +5 energy",ALIGN_LEFT, attDef)
+    PrintAt(13,5,chr(CHR_BOOK),ALIGN_LEFT, attBook)
+    PrintAt(13,7,"Book: reval random items",ALIGN_LEFT, attDef)
+
+    PAUSE 60
+    PrintAt(21, 17, "1. RETURN",ALIGN_LEFT, attMenu)
+    PrintAt(22, 17, "0. EXIT",ALIGN_LEFT, attMenu)
+
+    ClearEnter() 
+    DO
+        keyb = CODE INKEY$
+        if keyb = KEY1 THEN GOTO START
+        if keyb = KEY0 THEN GOTO END_PROGRAMM
+    LOOP UNTIL FALSE
+END SUB
 
 END_PROGRAMM:       
     paper WHITE: ink BLACK: border WHITE: cls
     STOP
-
 
 title_screen_data: 
 ASM

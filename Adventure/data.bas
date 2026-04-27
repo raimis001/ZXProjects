@@ -23,6 +23,7 @@ Gems:
 	    DB 36,36,72,80,160,64,128,0
     END ASM
 
+'        "                                          "
 intro_text:
     DATA "even a tiny drop of dew on"
     DATA "a flower cannot be preserved"
@@ -30,7 +31,6 @@ intro_text:
     DATA ""
     DATA "And still, there is a story"
     DATA "of a stone no one can reach"
-    DATA "Perhaps it was never meant to be found"  
 
 rest_text:
      DATA "You rest and recover your energy."
@@ -38,3 +38,26 @@ rest_text:
      DATA "and turned back."
      DATA "Not because they failed"
      DATA "but because they understood."
+
+rubin_text:
+    DAtA "You have found the ruby."
+    DATA "Its fire burns bright in your hands"
+    DATA "but the path is far from over."
+    DAtA "There is more to seek,"
+    DATA "and you must keep moving forward."
+
+sapphire_text:
+    DATA "You have found the sapphire."
+    DATA "Endless depth whispers of wisdom"
+    DATA "yet your journey is not complete."
+    DATA "Keep searching,"
+    DATA "what you seek still lies ahead."
+
+ametist_text:
+    DATA "I have found the amethyst."
+    DATA "I have reached my goal,"
+    DATA "and I no longer wish to search." 
+    DATA "Its quiet glow asks nothing of me."
+    DATA ""
+    DATA "He who found it has quietly"
+    DATA "stepped away from the world."
