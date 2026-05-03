@@ -72,7 +72,7 @@ DIM joy as ubyte = 0
 DIM hasKey as BOOLEAN = FALSE
 
 DIM GOLD as uinteger = 0
-DIM gold as ubyte = 0
+DIM gold as uinteger = 0
 DIM energy as byte = 100
 
 
@@ -790,7 +790,7 @@ SUB SHOP_SCREEN()
     paper BLACK: ink WHITE: border BLACK: cls
     SHOP_REDRAW:
     PrintAt(2, 5, "Welcome to the shop!",ALIGN_LEFT, attDef)
-    PrintAt(3, 5, "Your gold: " + str(GOLD),ALIGN_LEFT, attGold)
+    PrintAt(3, 5, "Your gold: " + str(GOLD) + "   ",ALIGN_LEFT, attGold)
 
     PrintAt(5, 5, "2. Book of chests (BoC)",ALIGN_LEFT, ttAttr)
     PrintAt(5, 32, "50g",ALIGN_LEFT, ttAttr)
